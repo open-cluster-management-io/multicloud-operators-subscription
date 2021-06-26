@@ -54,6 +54,8 @@ func TestSubscriptionNamespaceReconcile(t *testing.T) {
 var _ = BeforeSuite(func(done Done) {
 	By("bootstrapping test environment")
 
+	time.Sleep(5 * time.Second)
+
 	t := true
 	if os.Getenv("TEST_USE_EXISTING_CLUSTER") == "true" {
 		testEnv = &envtest.Environment{

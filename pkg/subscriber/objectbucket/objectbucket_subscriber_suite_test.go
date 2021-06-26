@@ -19,6 +19,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	"path/filepath"
 
@@ -65,6 +66,8 @@ func TestMain(m *testing.M) {
 
 // StartTestManager adds recFn
 func StartTestManager(mgr manager.Manager, g *gomega.GomegaWithT) (chan struct{}, *sync.WaitGroup) {
+	time.Sleep(5 * time.Second)
+
 	stop := make(chan struct{})
 	wg := &sync.WaitGroup{}
 	wg.Add(1)

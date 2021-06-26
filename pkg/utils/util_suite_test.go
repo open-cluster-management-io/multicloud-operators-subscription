@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -68,6 +69,8 @@ func TestMain(m *testing.M) {
 
 // StartTestManager adds recFn
 func StartTestManager(mgr manager.Manager, g *gomega.GomegaWithT) (chan struct{}, *sync.WaitGroup) {
+	time.Sleep(5 * time.Second)
+
 	stop := make(chan struct{})
 	wg := &sync.WaitGroup{}
 	wg.Add(1)

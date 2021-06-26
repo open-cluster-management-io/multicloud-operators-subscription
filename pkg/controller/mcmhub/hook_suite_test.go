@@ -64,6 +64,8 @@ func TestHookReconcile(t *testing.T) {
 var _ = BeforeSuite(func(done Done) {
 	By("bootstrapping test environment")
 
+	time.Sleep(5 * time.Second)
+
 	err := apis.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
