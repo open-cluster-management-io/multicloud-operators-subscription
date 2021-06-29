@@ -5,4 +5,4 @@ metadata:
   namespace: kuberesources
 spec:
     type: Git
-    pathname: https://github.com/open-cluster-management/multicloud-operators-subscription.git
+    pathname: https://open-cluster-management.io/multicloud-operators-subscription.git
