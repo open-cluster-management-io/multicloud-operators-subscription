@@ -2,17 +2,20 @@
 
 [![License](https://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Stand-alone deployment](#stand-alone-deployment)
-- [Multi-cluster deployment](#multi-cluster-deployment)
+- [multicloud-operators-subscription](#multicloud-operators-subscription)
+  - [Overview](#overview)
+  - [Architecture](#architecture)
+  - [Stand-alone deployment](#stand-alone-deployment)
+  - [Multi-cluster deployment](#multi-cluster-deployment)
     - [Prerequisite](#prerequisite)
     - [Operator Deployment](#operator-deployment)
     - [Add-on Deployment](#add-on-deployment)
     - [What is next](#what-is-next)
-- [GitOps subscription](#gitops-subscription)
-- [Object storage subscription](#object-storage-subscription)
-- [Community, discussion, contribution, and support](#community,-discussion,-contribution,-and-support)
+  - [GitOps subscription](#gitops-subscription)
+  - [Object storage subscription](#object-storage-subscription)
+  - [Community, discussion, contribution, and support](#community-discussion-contribution-and-support)
+    - [Communication channels](#communication-channels)
+  - [License](#license)
 
 ## Overview
 
@@ -78,7 +81,7 @@ $ kubectl -n open-cluster-management wait deploy multicloud-operators-subscripti
 ### Add-on Deployment
 
 
-Enable the subscription add-on for _managed_ cluster. For the value of `<managed cluster name>`, choose the managed cluster you want to install the add-on to by running the command `kubectl get managedclusters` on the _hub_ cluster.
+Deploy the subscription add-on on the _managed_ cluster. For the value of `<managed cluster name>`, choose the managed cluster you want to install the add-on to by running the command `kubectl get managedclusters` on the _hub_ cluster.
 
 ```shell
 $ kubectl config use-context <hub cluster context> # kubectl config use-context kind-hub
