@@ -17,7 +17,6 @@ package placementrule
 import (
 	"context"
 	"fmt"
-	"sort"
 
 	errorhelpers "github.com/openshift/library-go/pkg/operator/v1helpers"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -59,10 +58,7 @@ func (r *ReconcilePlacementRule) syncPlacementDecisions(ctx context.Context,
 		prDecisions = placementRule.Status.Decisions
 	}
 
-	// sort clusterdecisions by cluster name
-	sort.SliceStable(prDecisions, func(i, j int) bool {
-		return prDecisions[i].ClusterName < prDecisions[j].ClusterName
-	})
+	// no sorting necessary because it's already sorted by placementRule
 
 	var clusterDecisions []clusterapi.ClusterDecision
 
