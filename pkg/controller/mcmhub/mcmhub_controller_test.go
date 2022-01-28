@@ -302,8 +302,8 @@ func TestNewAppLabels(t *testing.T) {
 	g.Expect(c.Get(context.TODO(), labeltest1subkey, subscription)).NotTo(gomega.HaveOccurred())
 
 	// Verify that the application labels are added and set with the subscription name
-	g.Expect(string(subscription.Labels["app"])).To(gomega.Equal(labeltest1subkey.Name))
-	g.Expect(string(subscription.Labels["app.kubernetes.io/part-of"])).To(gomega.Equal(labeltest1subkey.Name))
+	g.Expect(subscription.Labels["app"]).To(gomega.Equal(labeltest1subkey.Name))
+	g.Expect(subscription.Labels["app.kubernetes.io/part-of"]).To(gomega.Equal(labeltest1subkey.Name))
 }
 
 func TestSyncAppLabels(t *testing.T) {
@@ -354,7 +354,7 @@ func TestSyncAppLabels(t *testing.T) {
 
 	g.Expect(c.Get(context.TODO(), labeltest2subkey, subscription)).NotTo(gomega.HaveOccurred())
 
-	// Verify that the application labels are synch'd with the exising app label
-	g.Expect(string(subscription.Labels["app"])).To(gomega.Equal("existingAppLabel"))
-	g.Expect(string(subscription.Labels["app.kubernetes.io/part-of"])).To(gomega.Equal("existingAppLabel"))
+	// Verify that the application labels are synch'd with the existing app label
+	g.Expect(subscription.Labels["app"]).To(gomega.Equal("existingAppLabel"))
+	g.Expect(subscription.Labels["app.kubernetes.io/part-of"]).To(gomega.Equal("existingAppLabel"))
 }
