@@ -26,7 +26,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -153,11 +153,13 @@ func RunManager() {
 			os.Exit(1)
 		}
 
-		// Setup Webhook listner
-		if err := webhook.AddToManager(mgr, hubconfig, Options.TLSKeyFilePathName, Options.TLSCrtFilePathName, Options.DisableTLS, true); err != nil {
-			klog.Error("Failed to initialize WebHook listener with error:", err)
-			os.Exit(1)
-		}
+		/*
+			// Setup Webhook listner
+			if err := webhook.AddToManager(mgr, hubconfig, Options.TLSKeyFilePathName, Options.TLSCrtFilePathName, Options.DisableTLS, true); err != nil {
+				klog.Error("Failed to initialize WebHook listener with error:", err)
+				os.Exit(1)
+			}
+		*/
 	} else if !strings.EqualFold(Options.ClusterName, "") {
 		// Setup ocinfrav1 Scheme for manager
 		if err := ocinfrav1.AddToScheme(mgr.GetScheme()); err != nil {
