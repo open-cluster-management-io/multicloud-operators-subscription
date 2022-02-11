@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	ginkgo "github.com/onsi/ginkgo/v2"
+	ginkgo "github.com/onsi/ginkgo"
 	gomega "github.com/onsi/gomega"
 
 	"k8s.io/client-go/kubernetes"

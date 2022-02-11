@@ -12,8 +12,8 @@ require (
 	github.com/go-logr/logr v1.2.2
 	github.com/google/go-github/v42 v42.0.0
 	github.com/johannesboyne/gofakes3 v0.0.0-20210819161434-5c8dfcfe5310
-	github.com/onsi/ginkgo/v2 v2.1.1
-	github.com/onsi/gomega v1.18.1
+	github.com/onsi/ginkgo v1.16.5
+	github.com/onsi/gomega v1.17.0
 	github.com/openshift/api v3.9.1-0.20190924102528-32369d4db2ad+incompatible
 	github.com/openshift/library-go v0.0.0-20220203150523-45e0cded6a36
 	github.com/operator-framework/operator-lib v0.10.0
@@ -35,7 +35,7 @@ require (
 	k8s.io/klog/v2 v2.40.1
 	open-cluster-management.io/addon-framework v0.2.0
 	open-cluster-management.io/api v0.6.0
-	open-cluster-management.io/multicloud-operators-channel v0.6.1-0.20220211034458-8219627658c1
+	open-cluster-management.io/multicloud-operators-channel v0.6.1-0.20220211220806-5d96f748742d
 	sigs.k8s.io/controller-runtime v0.11.0
 	sigs.k8s.io/kustomize/api v0.11.1
 )
@@ -535,7 +535,6 @@ require (
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
-	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/opencontainers/runc v1.1.0 // indirect
