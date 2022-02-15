@@ -18,12 +18,13 @@ import (
 	"fmt"
 	"os"
 
-	"k8s.io/client-go/rest"
-	"k8s.io/klog"
 	"open-cluster-management.io/multicloud-operators-subscription/pkg/apis"
 	"open-cluster-management.io/multicloud-operators-subscription/pkg/placementrule/controller"
 	"open-cluster-management.io/multicloud-operators-subscription/pkg/placementrule/utils"
 	appsubutils "open-cluster-management.io/multicloud-operators-subscription/pkg/utils"
+
+	"k8s.io/client-go/rest"
+	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )

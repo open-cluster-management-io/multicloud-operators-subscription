@@ -21,7 +21,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/ghodss/yaml"
@@ -34,7 +33,7 @@ import (
 	"helm.sh/helm/v3/pkg/storage/driver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	helmclient "open-cluster-management.io/multicloud-operators-subscription/pkg/helmrelease/client"
 	helmoperator "open-cluster-management.io/multicloud-operators-subscription/pkg/helmrelease/release"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -104,11 +103,7 @@ func downloadChart(client client.Client, s *appv1.HelmRelease) (string, error) {
 
 	chartsDir := os.Getenv(appv1.ChartsDir)
 	if chartsDir == "" {
-		chartsDir, err = ioutil.TempDir("/tmp", "charts")
-		if err != nil {
-			klog.Error(err, " - Can not create tempdir")
-			return "", err
-		}
+		chartsDir = "/tmp/hr-charts"
 	}
 
 	chartDir, err := utils.DownloadChart(configMap, secret, chartsDir, s)
