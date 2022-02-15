@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: klusterlet-addon-appmgr
+  namespace: open-cluster-management-agent-addon
+  labels:
+    app: application-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: application-manager
+  template:
+    metadata:
+      labels:
+        app: application-manager
+    spec:
+      serviceAccountName: klusterlet-addon-appmgr
+      containers:
+        - name: subscription-controller
+          image: xili/multicloud-operators-subscription:latest
+          volumeMounts:
+          - mountPath: /var/run/klusterlet
+            name: klusterlet-config
+            readOnly: true
+          command:
+          - /usr/local/bin/multicluster-operators-subscription
+          - --alsologtostderr
+          - --cluster-name=kind-managed-cluster
+          - --hub-cluster-configfile=/var/run/klusterlet/kubeconfig
+          - --v=1
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPLOYMENT_LABEL
+              value: subscription-controller
+            - name: OPERATOR_NAME
+              value: subscription-controller
+          resources:
+              requests:
+                cpu: 100m
+                memory: 128Mi
+      volumes:
+      - name: klusterlet-config
+        secret:
+          defaultMode: 420
+          secretName: hub-kubeconfig-secret

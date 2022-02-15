@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ch-git
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: Channel
+metadata:
+  name: backend-test
+  namespace: ch-git
+spec:
+  type: ObjectBucket
+  pathname: http://ec2-34-227-89-198.compute-1.amazonaws.com:9000/backend-test
+  sourceNamespaces:
+    - default
+  secretRef:
+    name: dev

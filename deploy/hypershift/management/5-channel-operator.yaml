@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multicluster-operators-channel
+  namespace: hypershift-clusters-acm-1
+  labels:
+    app: multicluster-operators-channel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: multicluster-operators-channel
+  template:
+    metadata:
+      labels:
+        app: multicluster-operators-channel
+    spec:
+      serviceAccountName: multicluster-operators
+      containers:
+        - name: multicluster-operators-channel
+          image: xili/multicloud-operators-channel:latest
+          imagePullPolicy: Always
+          volumeMounts:
+          - mountPath: /var/run/secrets/hypershift
+            name: kubeconfig
+            readOnly: true
+          ports:
+          - containerPort: 9443
+          command:
+          - /usr/local/bin/multicluster-operators-channel
+          - --alsologtostderr
+          - --kubeconfig=/var/run/secrets/hypershift/kubeconfig
+          - --v=1
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPLOYMENT_LABEL
+              value: "multicluster-operators-channel"
+            - name: OPERATOR_NAME
+              value: "multicluster-operators-channel"
+          resources:
+              requests:
+                cpu: 100m
+                memory: 128Mi
+      volumes:
+      - name: kubeconfig
+        secret:
+          defaultMode: 420
+          secretName: service-network-admin-kubeconfig

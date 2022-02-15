@@ -1,0 +1,25 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: multicluster-operators
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: multicluster-operators
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: system:open-cluster-management:kind-managed-cluster:5lv42
+roleRef:
+  kind: ClusterRole
+  name: multicluster-operators
+  apiGroup: rbac.authorization.k8s.io
+

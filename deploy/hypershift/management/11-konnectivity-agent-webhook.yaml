@@ -1,0 +1,130 @@
+---
+# need to replace the ipv4=172.30.166.186 to the new cluster ip of the channel service 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: konnectivity-agent-webhook
+  namespace: hypershift-clusters-acm-1
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: konnectivity-agent-webhook
+      hypershift.openshift.io/control-plane-component: konnectivity-agent-webhook
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: konnectivity-agent-webhook
+        hypershift.openshift.io/control-plane-component: konnectivity-agent-webhook
+        hypershift.openshift.io/hosted-control-plane: hypershift-clusters-acm-1
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: hypershift.openshift.io/control-plane
+                operator: In
+                values:
+                - "true"
+            weight: 50
+          - preference:
+              matchExpressions:
+              - key: hypershift.openshift.io/cluster
+                operator: In
+                values:
+                - hypershift-clusters-acm-1
+            weight: 100
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  hypershift.openshift.io/hosted-control-plane: hypershift-clusters-acm-1
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: konnectivity-agent-webhook
+                hypershift.openshift.io/control-plane-component: konnectivity-agent-webhook
+            topologyKey: topology.kubernetes.io/zone
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - --logtostderr=true
+        - --ca-cert
+        - /etc/konnectivity/agent/ca.crt
+        - --agent-cert
+        - /etc/konnectivity/agent/tls.crt
+        - --agent-key
+        - /etc/konnectivity/agent/tls.key
+        - --proxy-server-host
+        - konnectivity-server
+        - --proxy-server-port
+        - "8091"
+        - --health-server-port
+        - "2041"
+        - --agent-identifiers
+        - ipv4=172.30.166.186
+        - --keepalive-time
+        - 30s
+        - --probe-interval
+        - 30s
+        - --sync-interval
+        - 1m
+        - --sync-interval-cap
+        - 5m
+        command:
+        - /usr/bin/proxy-agent
+        image: registry.ci.openshift.org/hypershift/apiserver-network-proxy:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: healthz
+            port: 2041
+            scheme: HTTP
+          initialDelaySeconds: 120
+          periodSeconds: 60
+          successThreshold: 1
+          timeoutSeconds: 30
+        name: konnectivity-agent
+        resources:
+          requests:
+            cpu: 40m
+            memory: 50Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/konnectivity/agent
+          name: agent-certs
+      dnsPolicy: ClusterFirst
+      priorityClassName: hypershift-control-plane
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: hypershift.openshift.io/control-plane
+        operator: Equal
+        value: "true"
+      - effect: NoSchedule
+        key: hypershift.openshift.io/cluster
+        operator: Equal
+        value: hypershift-clusters-acm-1
+      volumes:
+      - name: agent-certs
+        secret:
+          defaultMode: 420
+          secretName: konnectivity-agent
