@@ -204,20 +204,6 @@ require (
 )
 
 replace (
-	cloud.google.com/go => google.golang.org/cloud v0.100.2
-	github.com/HdrHistogram/hdrhistogram-go => github.com/codahale/hdrhistogram v1.1.2
-	github.com/apache/thrift => git.apache.org/thrift.git v0.15.0
-	github.com/bits-and-blooms/bitset => github.com/willf/bitset v1.2.1
 	github.com/chai2010/gettext-go => github.com/chai2010/gettext-go v0.0.0-20160711120539-c6fed771bfd5
-	github.com/envoyproxy/protoc-gen-validate => github.com/lyft/protoc-gen-validate v0.6.3
-	github.com/fvbommel/util => vbom.ml/util v0.0.3
-	github.com/google/gnostic => github.com/googleapis/gnostic v0.6.6
-	github.com/moby/spdystream => github.com/docker/spdystream v0.2.0
-	github.com/openhistogram/circonusllhist => github.com/circonus-labs/circonusllhist v0.3.0
-	github.com/oras-project/oras => github.com/deislabs/oras v0.12.0
-	github.com/sourcegraph/go-diff => sourcegraph.com/sourcegraph/go-diff v0.6.1
-	go.etcd.io/bbolt => github.com/coreos/bbolt v1.3.6
-	golang.org/x/lint => github.com/golang/lint v0.0.0-20210508222113-6edffad5e616
-	gopkg.in/check.v1 => github.com/go-check/check v0.0.0-20201130134442-10cb98267c6c
 	k8s.io/client-go => k8s.io/client-go v0.23.3
 )
