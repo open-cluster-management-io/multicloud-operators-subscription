@@ -8,9 +8,8 @@ metadata:
   namespace: hypershift-clusters-acm-1
 spec:
   ports:
-  - port: 9443
+  - port: 443
     protocol: TCP
-    targetPort: 9443
   sessionAffinity: None
   type: ClusterIP
 ---
@@ -24,4 +23,4 @@ subsets:
   - addresses:
       - ip: 172.30.166.186
     ports:
-      - port: 9443
+      - port: 443
