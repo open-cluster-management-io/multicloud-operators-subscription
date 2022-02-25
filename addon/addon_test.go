@@ -7,12 +7,9 @@ import (
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	fakekube "k8s.io/client-go/kubernetes/fake"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clienttesting "k8s.io/client-go/testing"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	"open-cluster-management.io/addon-framework/pkg/agent"
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
@@ -145,114 +142,6 @@ func TestManifest(t *testing.T) {
 
 			// output is for debug
 			// output(t, test.name, objects...)
-		})
-	}
-}
-
-func TestCreateOrUpdateRoleBinding(t *testing.T) {
-	tests := []struct {
-		name            string
-		initObjects     []runtime.Object
-		clusterName     string
-		validateActions func(t *testing.T, actions []clienttesting.Action)
-	}{
-		{
-			name:        "create a new rolebinding",
-			initObjects: []runtime.Object{},
-			clusterName: "cluster1",
-			validateActions: func(t *testing.T, actions []clienttesting.Action) {
-				if len(actions) != 2 {
-					t.Errorf("expecte 2 actions, but got %v", actions)
-				}
-
-				createAction := actions[1].(clienttesting.CreateActionImpl)
-				createObject := createAction.Object.(*rbacv1.RoleBinding)
-
-				groups := agent.DefaultGroups("cluster1", AppMgrAddonName)
-
-				if createObject.Subjects[0].Name != groups[0] {
-					t.Errorf("Expected group name is %s, but got %s", groups[0], createObject.Subjects[0].Name)
-				}
-			},
-		},
-		{
-			name: "no update",
-			initObjects: []runtime.Object{
-				&rbacv1.RoleBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      roleBindingName,
-						Namespace: "cluster1",
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							Kind:     rbacv1.GroupKind,
-							APIGroup: "rbac.authorization.k8s.io",
-							Name:     agent.DefaultGroups("cluster1", AppMgrAddonName)[0],
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: "rbac.authorization.k8s.io",
-						Kind:     "ClusterRole",
-						Name:     clusterRoleName,
-					},
-				},
-			},
-			clusterName: "cluster1",
-			validateActions: func(t *testing.T, actions []clienttesting.Action) {
-				if len(actions) != 1 {
-					t.Errorf("expecte 0 actions, but got %v", actions)
-				}
-			},
-		},
-		{
-			name: "update rolebinding",
-			initObjects: []runtime.Object{
-				&rbacv1.RoleBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      roleBindingName,
-						Namespace: "cluster1",
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							Kind:     rbacv1.GroupKind,
-							APIGroup: "rbac.authorization.k8s.io",
-							Name:     "test",
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: "rbac.authorization.k8s.io",
-						Kind:     "ClusterRole",
-						Name:     clusterRoleName,
-					},
-				},
-			},
-			clusterName: "cluster1",
-			validateActions: func(t *testing.T, actions []clienttesting.Action) {
-				if len(actions) != 2 {
-					t.Errorf("expecte 2 actions, but got %v", actions)
-				}
-
-				updateAction := actions[1].(clienttesting.UpdateActionImpl)
-				updateObject := updateAction.Object.(*rbacv1.RoleBinding)
-
-				groups := agent.DefaultGroups("cluster1", AppMgrAddonName)
-
-				if updateObject.Subjects[0].Name != groups[0] {
-					t.Errorf("Expected group name is %s, but got %s", groups[0], updateObject.Subjects[0].Name)
-				}
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			kubeClient := fakekube.NewSimpleClientset(test.initObjects...)
-			err := createOrUpdateRoleBinding(kubeClient, AppMgrAddonName, test.clusterName)
-			if err != nil {
-				t.Errorf("createOrUpdateRoleBinding expected no error, but got %v", err)
-			}
-
-			test.validateActions(t, kubeClient.Actions())
 		})
 	}
 }

@@ -3,12 +3,11 @@ package addon
 import (
 	"context"
 	"embed"
-	"reflect"
 
+	"github.com/openshift/library-go/pkg/assets"
+	"github.com/openshift/library-go/pkg/operator/events"
+	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
@@ -23,11 +22,7 @@ import (
 const (
 	AppMgrAddonName = "application-manager"
 
-	// the clusterRole has been installed with the application-manager deployment
-	clusterRoleName = "open-cluster-management:addons:application-manager"
-	roleBindingName = "open-cluster-management:addons:application-manager"
-
-	GroupName = "rbac.authorization.k8s.io"
+	ChartDir = "manifests/chart"
 )
 
 //go:embed manifests
@@ -35,9 +30,14 @@ const (
 //go:embed manifests/chart/templates/_helpers.tpl
 var ChartFS embed.FS
 
-const ChartDir = "manifests/chart"
-
 var AppMgrImage string
+
+var agentPermissionFiles = []string{
+	// role with RBAC rules to access resources on hub
+	"manifests/permission/role.yaml",
+	// rolebinding to bind the above role to a certain user group
+	"manifests/permission/rolebinding.yaml",
+}
 
 type GlobalValues struct {
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,"`
@@ -79,65 +79,54 @@ func getValue(cluster *clusterv1.ManagedCluster,
 	return addonfactory.JsonStructToValues(addonValues)
 }
 
-func newRegistrationOption(kubeClient kubernetes.Interface, addonName string) *agent.RegistrationOption {
+func newRegistrationOption(kubeClient *kubernetes.Clientset, addonName string) *agent.RegistrationOption {
 	return &agent.RegistrationOption{
 		CSRConfigurations: agent.KubeClientSignerConfigurations(addonName, addonName),
 		CSRApproveCheck:   utils.DefaultCSRApprover(addonName),
 		PermissionConfig: func(cluster *clusterv1.ManagedCluster, addon *addonapiv1alpha1.ManagedClusterAddOn) error {
-			return createOrUpdateRoleBinding(kubeClient, addonName, cluster.Name)
+			for _, file := range agentPermissionFiles {
+				if err := applyManifestFromFile(file, cluster.Name, addon.Name, kubeClient); err != nil {
+					return err
+				}
+			}
+
+			return nil
 		},
 	}
 }
 
-// createOrUpdateRoleBinding create or update a role binding for a given cluster
-func createOrUpdateRoleBinding(kubeClient kubernetes.Interface, addonName, clusterName string) error {
-	acmRoleBinding := newRoleBindingForClusterRole(roleBindingName, clusterRoleName, clusterName, addonName)
+func applyManifestFromFile(file, clusterName, addonName string, kubeClient *kubernetes.Clientset) error {
+	groups := agent.DefaultGroups(clusterName, addonName)
+	config := struct {
+		ClusterName string
+		Group       string
+	}{
+		ClusterName: clusterName,
+		Group:       groups[0],
+	}
 
-	binding, err := kubeClient.RbacV1().RoleBindings(clusterName).Get(context.TODO(), roleBindingName, metav1.GetOptions{})
-	if err != nil {
-		if errors.IsNotFound(err) {
-			_, err = kubeClient.RbacV1().RoleBindings(clusterName).Create(context.TODO(), acmRoleBinding, metav1.CreateOptions{})
+	recorder := events.NewInMemoryRecorder("")
+	results := resourceapply.ApplyDirectly(context.Background(),
+		resourceapply.NewKubeClientHolder(kubeClient),
+		recorder,
+		resourceapply.NewResourceCache(),
+		func(name string) ([]byte, error) {
+			template, err := ChartFS.ReadFile(file)
+			if err != nil {
+				return nil, err
+			}
+			return assets.MustCreateAssetFromTemplate(name, template, config).Data, nil
+		},
+		file,
+	)
+
+	for _, result := range results {
+		if result.Error != nil {
+			return result.Error
 		}
-		return err
-	}
-
-	needUpdate := false
-	if !reflect.DeepEqual(acmRoleBinding.RoleRef, binding.RoleRef) {
-		needUpdate = true
-		binding.RoleRef = acmRoleBinding.RoleRef
-	}
-	if !reflect.DeepEqual(acmRoleBinding.Subjects, binding.Subjects) {
-		needUpdate = true
-		binding.Subjects = acmRoleBinding.Subjects
-	}
-	if needUpdate {
-		_, err = kubeClient.RbacV1().RoleBindings(clusterName).Update(context.TODO(), binding, metav1.UpdateOptions{})
-		return err
 	}
 
 	return nil
-}
-
-func newRoleBindingForClusterRole(name, clusterRoleName, clusterName, addonName string) *rbacv1.RoleBinding {
-	groups := agent.DefaultGroups(clusterName, addonName)
-	return &rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: clusterName,
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: GroupName,
-			Kind:     "ClusterRole",
-			Name:     clusterRoleName,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:     rbacv1.GroupKind,
-				APIGroup: GroupName,
-				Name:     groups[0],
-			},
-		},
-	}
 }
 
 func NewAddonManager(kubeConfig *rest.Config, agentImage string) (addonmanager.AddonManager, error) {
