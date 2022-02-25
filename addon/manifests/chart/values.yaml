@@ -1,10 +1,12 @@
 org: open-cluster-management
 
 nameOverride: application-manager
-fullnameOverride: klusterlet-addon-appmgr
+fullnameOverride: application-manager
 
 hubKubeConfigSecret: null
 clusterName: null
+
+onHubCluster: false
 
 affinity: {}
 

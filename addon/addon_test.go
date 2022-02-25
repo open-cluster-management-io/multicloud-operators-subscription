@@ -33,6 +33,10 @@ func newCluster(name string) *clusterv1.ManagedCluster {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
+		Status: clusterv1.ManagedClusterStatus{Version: clusterv1.ManagedClusterVersion{Kubernetes: "1.10.1"}},
+	}
+	if name == "local-cluster" {
+		cluster.SetLabels(map[string]string{"local-cluster": "true"})
 	}
 	return cluster
 }
@@ -60,7 +64,6 @@ func newAgentAddon(t *testing.T) agent.AgentAddon {
 		WithScheme(scheme).
 		WithGetValuesFuncs(getValuesFunc, addonfactory.GetValuesFromAddonAnnotation).
 		WithAgentRegistrationOption(registrationOption).
-		WithInstallStrategy(agent.InstallAllStrategy("open-cluster-management-agent-addon")).
 		BuildHelmAgentAddon()
 	if err != nil {
 		t.Fatalf("failed to build agent %v", err)
@@ -101,21 +104,21 @@ func TestManifest(t *testing.T) {
 		{
 			name:              "case_1",
 			cluster:           newCluster("cluster1"),
-			addon:             newAddon(AppMgrAddonName, "cluster1", "", `{"global":{"nodeSelector":{"node-role.kubernetes.io/infra":""},"imageOverrides":{"search_collector":"quay.io/test/search_collector:test"}}}`),
+			addon:             newAddon(AppMgrAddonName, "cluster1", "", `{"global":{"nodeSelector":{"node-role.kubernetes.io/infra":""},"imageOverrides":{"multicluster_operators_subscription":"quay.io/test/multicluster_operators_subscription:test"}}}`),
 			expectedNamespace: "open-cluster-management-agent-addon",
-			expectedImage:     "quay.io/test/search_collector:test",
-			expectedCount:     6,
+			expectedImage:     "quay.io/test/multicluster_operators_subscription:test",
+			expectedCount:     10,
 		},
 		{
 			name:              "case_2",
-			cluster:           newCluster("cluster1"),
-			addon:             newAddon(AppMgrAddonName, "cluster1", "test", ""),
+			cluster:           newCluster("local-cluster"),
+			addon:             newAddon(AppMgrAddonName, "local-cluster", "test", ""),
 			expectedNamespace: "test",
-			expectedImage:     "quay.io/stolostron/search_collector:2.5.0",
+			expectedImage:     "quay.io/open-cluster-management/multicluster_operators_subscription:latest",
 			expectedCount:     6,
 		},
 	}
-
+	AppMgrImage = "quay.io/open-cluster-management/multicluster_operators_subscription:latest"
 	agentAddon := newAgentAddon(t)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

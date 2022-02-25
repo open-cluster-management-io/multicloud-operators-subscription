@@ -23,7 +23,7 @@ import (
 const (
 	AppMgrAddonName = "application-manager"
 
-	// the clusterRole has been installed with the search-operator deployment
+	// the clusterRole has been installed with the application-manager deployment
 	clusterRoleName = "open-cluster-management:addons:application-manager"
 	roleBindingName = "open-cluster-management:addons:application-manager"
 
@@ -48,12 +48,14 @@ type GlobalValues struct {
 }
 
 type Values struct {
+	OnHubCluster bool         `json:"onHubCluster,"`
 	GlobalValues GlobalValues `json:"global,"`
 }
 
 func getValue(cluster *clusterv1.ManagedCluster,
 	addon *addonapiv1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
 	addonValues := Values{
+		OnHubCluster: false,
 		GlobalValues: GlobalValues{
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			ImagePullSecret: "open-cluster-management-image-pull-credentials",
@@ -69,11 +71,12 @@ func getValue(cluster *clusterv1.ManagedCluster,
 		},
 	}
 
-	values, err := addonfactory.JsonStructToValues(addonValues)
-	if err != nil {
-		return nil, err
+	labels := cluster.GetLabels()
+	if labels["local-cluster"] == "true" {
+		addonValues.OnHubCluster = true
 	}
-	return values, nil
+
+	return addonfactory.JsonStructToValues(addonValues)
 }
 
 func newRegistrationOption(kubeClient kubernetes.Interface, addonName string) *agent.RegistrationOption {

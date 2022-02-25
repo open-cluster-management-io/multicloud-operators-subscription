@@ -90,7 +90,7 @@ spec:
       volumes:
         - name: klusterlet-config
           secret:
-            secretName: {{ .Values.hubKubeconfigSecret }}
+            secretName: {{ .Values.hubKubeConfigSecret }}
       {{- if .Values.global.imagePullSecret }}
       imagePullSecrets:
       - name: "{{ .Values.global.imagePullSecret }}"
