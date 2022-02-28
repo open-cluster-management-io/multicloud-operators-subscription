@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .ClusterName }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
+  kind: ClusterRole
   name: open-cluster-management:addons:application-manager
 subjects:
   - kind: Group
