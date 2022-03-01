@@ -300,6 +300,8 @@ func GenerateResourceListByConfig(cfg *rest.Config, s *releasev1.HelmRelease) ([
 
 	if err != nil {
 		klog.Error(err.Error())
+
+		return nil, err
 	}
 
 	return generateResourceList(*mgr, s)
