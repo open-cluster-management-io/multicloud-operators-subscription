@@ -312,6 +312,7 @@ var theManager manager.Manager = nil
 func getManager(cfg *rest.Config) (*manager.Manager, error) {
 	if theManager == nil {
 		klog.Info("no existing controller manager for helm chart dry run ..")
+
 		dryRunEventRecorder := record.NewBroadcaster()
 
 		var err error = nil
