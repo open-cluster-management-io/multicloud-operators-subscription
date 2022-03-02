@@ -25,6 +25,7 @@ const (
 	ChartDir = "manifests/chart"
 )
 
+//nolint
 //go:embed manifests
 //go:embed manifests/chart
 //go:embed manifests/chart/templates/_helpers.tpl
@@ -95,6 +96,7 @@ func newRegistrationOption(kubeClient *kubernetes.Clientset, addonName string) *
 	}
 }
 
+//nolint
 func applyManifestFromFile(file, clusterName, addonName string, kubeClient *kubernetes.Clientset) error {
 	groups := agent.DefaultGroups(clusterName, addonName)
 	config := struct {

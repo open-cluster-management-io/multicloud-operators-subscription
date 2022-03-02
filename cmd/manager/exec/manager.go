@@ -226,7 +226,7 @@ func RunManager() {
 	klog.Info("Starting the Cmd.")
 
 	// Start addon manager
-	if !Options.Standalone && Options.ClusterName == "" && Options.DeployAgent {
+	if !Options.Standalone && Options.ClusterName == "" {
 		adddonmgr, err := agentaddon.NewAddonManager(cfg, Options.AgentImage, Options.AgentInstallAll)
 		if err != nil {
 			klog.Error("Failed to setup addon manager, error:", err)

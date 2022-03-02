@@ -1,9 +1,6 @@
 package addon
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os"
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -14,7 +11,6 @@ import (
 	"open-cluster-management.io/addon-framework/pkg/agent"
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
-	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -32,9 +28,11 @@ func newCluster(name string) *clusterv1.ManagedCluster {
 		},
 		Status: clusterv1.ManagedClusterStatus{Version: clusterv1.ManagedClusterVersion{Kubernetes: "1.10.1"}},
 	}
+
 	if name == "local-cluster" {
 		cluster.SetLabels(map[string]string{"local-cluster": "true"})
 	}
+
 	return cluster
 }
 
@@ -44,19 +42,22 @@ func newAddon(name, cluster, installNamespace string, annotationValues string) *
 			Name:      name,
 			Namespace: cluster,
 		},
-		Spec: *&addonapiv1alpha1.ManagedClusterAddOnSpec{
+		Spec: addonapiv1alpha1.ManagedClusterAddOnSpec{
 			InstallNamespace: installNamespace,
 		},
 	}
+
 	if annotationValues != "" {
 		addon.SetAnnotations(map[string]string{"addon.open-cluster-management.io/values": annotationValues})
 	}
+
 	return addon
 }
 
 func newAgentAddon(t *testing.T) agent.AgentAddon {
 	registrationOption := newRegistrationOption(nil, AppMgrAddonName)
 	getValuesFunc := getValue
+
 	agentAddon, err := addonfactory.NewAgentAddonFactory(AppMgrAddonName, ChartFS, ChartDir).
 		WithScheme(scheme).
 		WithGetValuesFuncs(getValuesFunc, addonfactory.GetValuesFromAddonAnnotation).
@@ -64,31 +65,12 @@ func newAgentAddon(t *testing.T) agent.AgentAddon {
 		BuildHelmAgentAddon()
 	if err != nil {
 		t.Fatalf("failed to build agent %v", err)
-
 	}
+
 	return agentAddon
 }
 
-func output(t *testing.T, name string, objects ...runtime.Object) {
-	tmpDir, err := os.MkdirTemp("./", name)
-	if err != nil {
-		t.Fatalf("failed to create temp %v", err)
-	}
-
-	for i, o := range objects {
-		data, err := yaml.Marshal(o)
-		if err != nil {
-			t.Fatalf("failed yaml marshal %v", err)
-		}
-
-		err = ioutil.WriteFile(fmt.Sprintf("%v/%v-%v.yaml", tmpDir, i, o.GetObjectKind().GroupVersionKind().Kind), data, 0644)
-		if err != nil {
-			t.Fatalf("failed to Marshal object.%v", err)
-		}
-
-	}
-}
-
+// nolint
 func TestManifest(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -117,6 +99,7 @@ func TestManifest(t *testing.T) {
 	}
 	AppMgrImage = "quay.io/open-cluster-management/multicluster_operators_subscription:latest"
 	agentAddon := newAgentAddon(t)
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			objects, err := agentAddon.Manifests(test.cluster, test.addon)
