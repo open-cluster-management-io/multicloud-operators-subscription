@@ -129,7 +129,7 @@ func applyManifestFromFile(file, clusterName, addonName string, kubeClient *kube
 	return nil
 }
 
-func NewAddonManager(kubeConfig *rest.Config, agentImage string) (addonmanager.AddonManager, error) {
+func NewAddonManager(kubeConfig *rest.Config, agentImage string, agentInstallAllStrategy bool) (addonmanager.AddonManager, error) {
 	AppMgrImage = agentImage
 
 	addonMgr, err := addonmanager.New(kubeConfig)
@@ -144,10 +144,17 @@ func NewAddonManager(kubeConfig *rest.Config, agentImage string) (addonmanager.A
 		return addonMgr, err
 	}
 
-	agentAddon, err := addonfactory.NewAgentAddonFactory(AppMgrAddonName, ChartFS, ChartDir).
+	agentFactory := addonfactory.NewAgentAddonFactory(AppMgrAddonName, ChartFS, ChartDir).
 		WithGetValuesFuncs(getValue, addonfactory.GetValuesFromAddonAnnotation).
-		WithAgentRegistrationOption(newRegistrationOption(kubeClient, AppMgrAddonName)).
-		BuildHelmAgentAddon()
+		WithAgentRegistrationOption(newRegistrationOption(kubeClient, AppMgrAddonName))
+
+	if agentInstallAllStrategy {
+		agentFactory.WithInstallStrategy(&agent.InstallStrategy{
+			Type: agent.InstallAll,
+		})
+	}
+
+	agentAddon, err := agentFactory.BuildHelmAgentAddon()
 	if err != nil {
 		klog.Errorf("failed to build agent %v", err)
 		return addonMgr, err
