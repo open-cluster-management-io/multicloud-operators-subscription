@@ -60,31 +60,31 @@ var (
 // SubscriberItem - defines the unit of namespace subscription
 type SubscriberItem struct {
 	appv1.SubscriberItem
-	crdsAndNamespaceFiles  []string
-	rbacFiles              []string
-	otherFiles             []string
-	repoRoot               string
-	commitID               string
-	reconcileRate          string
-	desiredCommit          string
-	desiredTag             string
-	syncTime               string
-	stopch                 chan struct{}
-	syncinterval           int
-	count                  int
-	synchronizer           SyncSource
-	chartDirs              map[string]string
-	kustomizeDirs          map[string]string
-	resources              []kubesynchronizer.ResourceUnit
-	indexFile              *repo.IndexFile
-	webhookEnabled         bool
-	successful             bool
-	clusterAdmin           bool
+	crdsAndNamespaceFiles []string
+	rbacFiles             []string
+	otherFiles            []string
+	repoRoot              string
+	commitID              string
+	reconcileRate         string
+	desiredCommit         string
+	desiredTag            string
+	syncTime              string
+	stopch                chan struct{}
+	syncinterval          int
+	count                 int
+	synchronizer          SyncSource
+	chartDirs             map[string]string
+	kustomizeDirs         map[string]string
+	resources             []kubesynchronizer.ResourceUnit
+	indexFile             *repo.IndexFile
+	webhookEnabled        bool
+	successful            bool
+	clusterAdmin          bool
 	currentNamespaceScoped bool
-	userID                 string
-	userGroup              string
-	successClonesCount     int
-	errorClonesCount       int
+	userID                string
+	userGroup             string
+	successClonesCount    int
+	errorClonesCount      int
 }
 
 type kubeResource struct {
@@ -151,7 +151,7 @@ func (ghsi *SubscriberItem) Stop() {
 }
 
 func (ghsi *SubscriberItem) doSubscriptionWithRetries(retryInterval time.Duration, retries int) {
-	err := ghsi.doSubscription()
+	totalSucClonesCount, totalErrClonesCount, err := ghsi.doSubscription()
 
 	if err != nil {
 		klog.Error(err, "Subscription error.")
@@ -165,7 +165,15 @@ func (ghsi *SubscriberItem) doSubscriptionWithRetries(retryInterval time.Duratio
 			time.Sleep(retryInterval)
 			klog.Infof("Re-try #%d: subcribing to the Git repo", n+1)
 
-			err = ghsi.doSubscription()
+			var sucClonesCount int
+
+			var errClonesCount int
+
+			sucClonesCount, errClonesCount, err = ghsi.doSubscription()
+			totalSucClonesCount += sucClonesCount
+
+			totalErrClonesCount += errClonesCount
+
 			if err != nil {
 				klog.Error(err, "Subscription error.")
 			}
@@ -175,9 +183,12 @@ func (ghsi *SubscriberItem) doSubscriptionWithRetries(retryInterval time.Duratio
 			break
 		}
 	}
+
+	ghsi.successClonesCount += totalSucClonesCount
+	ghsi.errorClonesCount += totalErrClonesCount
 }
 
-func (ghsi *SubscriberItem) doSubscription() error {
+func (ghsi *SubscriberItem) doSubscription() (sucClonesCount int, errClonesCount int, err error) {
 	hostkey := types.NamespacedName{Name: ghsi.Subscription.Name, Namespace: ghsi.Subscription.Namespace}
 	klog.Info("enter doSubscription: ", hostkey.String())
 
@@ -191,7 +202,7 @@ func (ghsi *SubscriberItem) doSubscription() error {
 
 		if ghsi.successful {
 			klog.Infof("All resources are reconciled successfully. Waiting for the next Git Webhook event.")
-			return nil
+			return 0, 0, nil
 		}
 
 		klog.Infof("Resources are not reconciled successfully yet. Continue reconciling.")
@@ -257,13 +268,21 @@ func (ghsi *SubscriberItem) doSubscription() error {
 	}
 
 	//Clone the git repo
+<<<<<<< HEAD
 	commitID, checkoutSummary, err := ghsi.cloneGitRepo()
+=======
+	commitID, cloneCount, err := ghsi.cloneGitRepo()
+>>>>>>> 2e909a4 (Added git clone count to the git subscriber)
 	if err != nil {
+		errClonesCount = cloneCount
+
 		klog.Error(err, "Unable to clone the git repo ", ghsi.Channel.Spec.Pathname)
 		ghsi.successful = false
 
-		return err
+		return sucClonesCount, errClonesCount, err
 	}
+
+	sucClonesCount = cloneCount
 
 	klog.Info("Git commit: ", commitID)
 
@@ -279,7 +298,7 @@ func (ghsi *SubscriberItem) doSubscription() error {
 				if commitID == ghsi.commitID && ghsi.successful {
 					klog.Infof("Appsub %s Git commit: %s hasn't changed. Skip reconcile.", hostkey.String(), commitID)
 
-					return nil
+					return sucClonesCount, errClonesCount, nil
 				}
 			} else {
 				klog.Infof("Reconciling all resources")
@@ -296,7 +315,7 @@ func (ghsi *SubscriberItem) doSubscription() error {
 
 		ghsi.successful = false
 
-		return err
+		return sucClonesCount, errClonesCount, err
 	}
 
 	errMsg := ""
@@ -377,7 +396,7 @@ func (ghsi *SubscriberItem) doSubscription() error {
 			klog.Error("failed to prepare resources to apply and there is no resource to apply. quit")
 		}
 
-		return errors.New("failed to prepare resources to apply and there is no resource to apply. err: " + errMsg)
+		return sucClonesCount, errClonesCount, errors.New("failed to prepare resources to apply and there is no resource to apply. err: " + errMsg)
 	}
 
 	allowedGroupResources, deniedGroupResources := utils.GetAllowDenyLists(*ghsi.Subscription)
@@ -388,7 +407,7 @@ func (ghsi *SubscriberItem) doSubscription() error {
 
 		ghsi.successful = false
 
-		return err
+		return sucClonesCount, errClonesCount, err
 	}
 
 	ghsi.commitID = commitID
@@ -402,7 +421,7 @@ func (ghsi *SubscriberItem) doSubscription() error {
 	ghsi.indexFile = nil
 	ghsi.successful = true
 
-	return nil
+	return sucClonesCount, errClonesCount, nil
 }
 
 func (ghsi *SubscriberItem) subscribeKustomizations() error {
