@@ -255,7 +255,8 @@ func (ghsi *SubscriberItem) doSubscription() error {
 	}
 
 	//Clone the git repo
-	commitID, err := ghsi.cloneGitRepo()
+	commitID, _, err := ghsi.cloneGitRepo()
+	// TODO: handle cloneCount
 	if err != nil {
 		klog.Error(err, "Unable to clone the git repo ", ghsi.Channel.Spec.Pathname)
 		ghsi.successful = false
@@ -711,7 +712,7 @@ func (ghsi *SubscriberItem) subscribeHelmCharts(indexFile *repo.IndexFile) (err 
 	return err
 }
 
-func (ghsi *SubscriberItem) cloneGitRepo() (commitID string, err error) {
+func (ghsi *SubscriberItem) cloneGitRepo() (commitID string, cloneCount int, err error) {
 	annotations := ghsi.Subscription.GetAnnotations()
 
 	cloneDepth := 1
@@ -740,7 +741,7 @@ func (ghsi *SubscriberItem) cloneGitRepo() (commitID string, err error) {
 	primaryChannelConnectionConfig, err := getChannelConnectionConfig(ghsi.ChannelSecret, ghsi.ChannelConfigMap)
 
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 
 	primaryChannelConnectionConfig.RepoURL = ghsi.Channel.Spec.Pathname
@@ -753,7 +754,7 @@ func (ghsi *SubscriberItem) cloneGitRepo() (commitID string, err error) {
 		secondaryChannelConnectionConfig, err := getChannelConnectionConfig(ghsi.SecondaryChannelSecret, ghsi.SecondaryChannelConfigMap)
 
 		if err != nil {
-			return "", err
+			return "", 0, err
 		}
 
 		secondaryChannelConnectionConfig.RepoURL = ghsi.SecondaryChannel.Spec.Pathname

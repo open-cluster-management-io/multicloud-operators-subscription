@@ -254,8 +254,9 @@ var _ = Describe("test subscribing to bitbucket repository", func() {
 		subitem.Subscription = bitbucketsub
 		subitem.Channel = bitbucketchn
 		subitem.synchronizer = defaultSubscriber.synchronizer
-		commitid, err := subitem.cloneGitRepo()
+		commitid, cloneCount, err := subitem.cloneGitRepo()
 		Expect(commitid).ToNot(Equal(""))
+		Expect(cloneCount).To(Equal(1))
 		Expect(err).NotTo(HaveOccurred())
 
 		err = subitem.sortClonedGitRepo()
@@ -277,8 +278,9 @@ var _ = Describe("test subscribing to bitbucket repository", func() {
 		bitbucketchn.Spec.InsecureSkipVerify = true
 		subitem.Channel = bitbucketchn
 		subitem.synchronizer = defaultSubscriber.synchronizer
-		commitid, err := subitem.cloneGitRepo()
+		commitid, cloneCount, err := subitem.cloneGitRepo()
 		Expect(commitid).ToNot(Equal(""))
+		Expect(cloneCount).To(Equal(1))
 		Expect(err).NotTo(HaveOccurred())
 
 		err = subitem.sortClonedGitRepo()
@@ -315,8 +317,9 @@ var _ = Describe("test subscribe invalid resource", func() {
 		subitem.Subscription = githubsub
 		subitem.Channel = githubchn
 		subitem.synchronizer = defaultSubscriber.synchronizer
-		commitid, err := subitem.cloneGitRepo()
+		commitid, cloneCount, err := subitem.cloneGitRepo()
 		Expect(commitid).ToNot(Equal(""))
+		Expect(cloneCount).To(Equal(1))
 		Expect(err).NotTo(HaveOccurred())
 
 		// Test with a fake authentication secret but correct data keys in the secret
@@ -335,7 +338,8 @@ var _ = Describe("test subscribe invalid resource", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		subitem.SubscriberItem.ChannelSecret = chnIncorrectSecret
-		_, err = subitem.cloneGitRepo()
+		_, cloneCount, err = subitem.cloneGitRepo()
+		Expect(cloneCount).To(Equal(0))
 		Expect(err.Error()).To(Equal("ssh_key (and optionally passphrase) or user and accressToken need to be specified in the channel secret"))
 
 		chnIncorrectSecret2 := &corev1.Secret{}
@@ -343,7 +347,8 @@ var _ = Describe("test subscribe invalid resource", func() {
 		Expect(err).NotTo(HaveOccurred())
 		subitem.SubscriberItem.ChannelSecret = chnIncorrectSecret2
 
-		_, err = subitem.cloneGitRepo()
+		_, cloneCount, err = subitem.cloneGitRepo()
+		Expect(cloneCount).To(Equal(0))
 		Expect(err.Error()).To(Equal("ssh_key (and optionally passphrase) or user and accressToken need to be specified in the channel secret"))
 
 		err = k8sClient.Delete(context.TODO(), chnSecret)
