@@ -29,7 +29,7 @@ import (
 )
 
 var (
-	appsubReport1_failed = appsubReportV1alpha1.SubscriptionReport{
+	appsubReport1Failed = appsubReportV1alpha1.SubscriptionReport{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps.open-cluster-management.io/v1alpha1",
 			Kind:       "SubscriptionReport",
@@ -50,7 +50,7 @@ var (
 		},
 	}
 
-	appsubReport1_deployed = appsubReportV1alpha1.SubscriptionReport{
+	appsubReport1Deployed = appsubReportV1alpha1.SubscriptionReport{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps.open-cluster-management.io/v1alpha1",
 			Kind:       "SubscriptionReport",
@@ -103,8 +103,6 @@ var (
 	}
 )
 
-const timeout = time.Second * 5
-
 func TestRefreshManagedClusterViews(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
@@ -124,8 +122,8 @@ func TestRefreshManagedClusterViews(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	// Test 1: create appsubReport1_failed, expect app1 managedClusterView is created in the cluster1 NS
-	g.Expect(c.Create(context.TODO(), &appsubReport1_failed)).NotTo(gomega.HaveOccurred())
+	// Test 1: create appsubReport1Failed, expect app1 managedClusterView is created in the cluster1 NS
+	g.Expect(c.Create(context.TODO(), &appsubReport1Failed)).NotTo(gomega.HaveOccurred())
 
 	time.Sleep(time.Second * 10)
 
@@ -133,12 +131,12 @@ func TestRefreshManagedClusterViews(t *testing.T) {
 	err = c.Get(context.TODO(), view1Key, view1)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
-	// Test 1.1: delete appsubReport1_failed, create appsubReport1_deployed, expect app1 managedClusterView is removed from the cluster1 NS
-	g.Expect(c.Delete(context.TODO(), &appsubReport1_failed)).NotTo(gomega.HaveOccurred())
+	// Test 1.1: delete appsubReport1Failed, create appsubReport1Deployed, expect app1 managedClusterView is removed from the cluster1 NS
+	g.Expect(c.Delete(context.TODO(), &appsubReport1Failed)).NotTo(gomega.HaveOccurred())
 
-	g.Expect(c.Create(context.TODO(), &appsubReport1_deployed)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Create(context.TODO(), &appsubReport1Deployed)).NotTo(gomega.HaveOccurred())
 
-	defer c.Delete(context.TODO(), &appsubReport1_deployed)
+	defer c.Delete(context.TODO(), &appsubReport1Deployed)
 
 	time.Sleep(time.Second * 10)
 
