@@ -448,6 +448,9 @@ func TestClusterChange(t *testing.T) {
 	recFn, requests := SetupTestReconcile(newReconciler(mgr))
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
 
+	recFn2, _ := SetupTestReconcile(genReconciler(mgr))
+	g.Expect(add(mgr, recFn2)).NotTo(gomega.HaveOccurred())
+
 	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Minute)
 	mgrStopped := StartTestManager(ctx, mgr, g)
 
@@ -492,7 +495,7 @@ func TestClusterChange(t *testing.T) {
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	if len(decision.Status.Decisions) != 1 {
-		t.Errorf("Failed to get all(1) clusters, placementdecision: %v", result)
+		t.Errorf("Failed to get all(1) clusters, placementdecision: %v", decision)
 	}
 
 	clinstance = clusters[1].DeepCopy()
@@ -518,5 +521,32 @@ func TestClusterChange(t *testing.T) {
 
 	if len(decision.Status.Decisions) != 2 {
 		t.Errorf("Failed to get all(2) clusters, placementdecision: %v", decision)
+	}
+
+	result.Spec.SchedulerName = "test-scheduler"
+	err = c.Update(context.TODO(), result)
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	var prDecs = []appv1alpha1.PlacementDecision{}
+	prDecs = append(prDecs, result.Status.Decisions[0])
+	result.Status.Decisions = prDecs
+
+	err = c.Status().Update(context.TODO(), result)
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	time.Sleep(5 * time.Second)
+
+	err = c.Get(context.TODO(), prulekey, result)
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	if len(result.Status.Decisions) != 1 {
+		t.Errorf("Failed to get all(1) clusters, placementrule: %v", result)
+	}
+
+	err = c.Get(ctx, pdkey, decision)
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	if len(decision.Status.Decisions) != 1 {
+		t.Errorf("Failed to get all(1) clusters, placementdecision: %v", decision)
 	}
 }
