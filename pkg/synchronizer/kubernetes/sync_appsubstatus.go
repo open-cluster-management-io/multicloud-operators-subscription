@@ -236,6 +236,9 @@ func (sync *KubeSynchronizer) SyncAppsubClusterStatus(appsub *appv1.Subscription
 
 			klog.V(1).Infof("Update on managed cluster, appsubstatus:%v/%v", pkgstatus.Namespace, pkgstatus.Name)
 
+			newCheckoutStatus.SuccessfullCount += pkgstatus.Statuses.CheckoutStatus.SuccessfullCount
+			newCheckoutStatus.FailedCount += pkgstatus.Statuses.CheckoutStatus.FailedCount
+
 			if appsub != nil {
 				sync.recordAppSubStatusEvents(appsub, "Update", newUnitStatus, newCheckoutStatus)
 			}
