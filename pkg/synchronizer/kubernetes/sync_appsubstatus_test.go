@@ -155,8 +155,8 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 
 		Expect(pkgstatuses.Items[0].Name).To(Equal(pkgstatusName))
 		Expect(len(pkgstatuses.Items[0].Statuses.SubscriptionStatus)).To(Equal(2))
-		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.SuccessfullCount).To(Equal(5))
-		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.FailedCount).To(Equal(2))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.SuccessfullCount).To(Equal(8))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.FailedCount).To(Equal(3))
 
 		// Delete
 		rmAppsubClusterStatus := SubscriptionClusterStatus{
@@ -222,6 +222,8 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(pkgstatuses.Items)).To(Equal(1))
 		Expect(pkgstatuses.Items[0].Name).To(Equal(pkgstatusName))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.SuccessfullCount).To(Equal(0))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.FailedCount).To(Equal(0))
 
 		// Cluster appsub report is created with a deployed result
 		cAppsubReport := &appSubStatusV1alpha1.SubscriptionReport{}
