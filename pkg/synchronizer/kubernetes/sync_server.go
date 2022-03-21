@@ -48,12 +48,17 @@ type SubscriptionUnitStatus struct {
 	Message    string
 }
 
+type SubscriptionCheckoutStatus struct {
+	SuccessfullCount int
+	FailedCount      int
+}
+
 type SubscriptionClusterStatus struct {
 	Cluster                   string
 	AppSub                    types.NamespacedName /* hosting appsub */
 	Action                    string               /* "APPLY" or "DELETE" */
 	SubscriptionPackageStatus []SubscriptionUnitStatus
-	CheckoutSummary           utils.CheckoutSummary
+	CheckoutStatus            *SubscriptionCheckoutStatus
 }
 
 // KubeSynchronizer handles resources to a kube endpoint.

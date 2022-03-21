@@ -165,18 +165,17 @@ func (sync *KubeSynchronizer) SyncAppsubClusterStatus(appsub *appv1.Subscription
 
 		klog.V(2).Infof("Subscription unit statuses:%v", newUnitStatus)
 
-		checkoutSummary := appsubClusterStatus.CheckoutSummary
-		klog.V(2).Infof("Subscription checkout summary:%v", checkoutSummary)
+		var newCheckoutStatus *v1alpha1.CheckoutStatus
+		if appsubClusterStatus.CheckoutStatus != nil {
+			newCheckoutStatus = &v1alpha1.CheckoutStatus{
+				SuccessfullCount: appsubClusterStatus.CheckoutStatus.SuccessfullCount,
+				FailedCount:      appsubClusterStatus.CheckoutStatus.FailedCount,
+			}
 
-		// NOTE: the CRD is not reflecting successful vs failed checkouts
-		totalCount := checkoutSummary.SuccessfulCount + checkoutSummary.FailedCount
-		totalLatency := checkoutSummary.SuccessfulLatencyMS + checkoutSummary.FailedLatencyMS
-
-		newCheckoutStatus := &v1alpha1.CheckoutStatus{
-			Count:       totalCount,
-			LatencyLast: totalLatency,
-			LatencyMin:  totalLatency,
-			LatencyMax:  totalLatency,
+			klog.V(2).Infof("Subscription checkout status:%v", newCheckoutStatus)
+		} else {
+			newCheckoutStatus = &v1alpha1.CheckoutStatus{}
+			klog.V(2).Infof("No checkout status reported")
 		}
 
 		if !foundPkgStatus {
@@ -390,7 +389,7 @@ func (sync *KubeSynchronizer) SyncAppsubClusterStatus(appsub *appv1.Subscription
 }
 
 func (sync *KubeSynchronizer) recordAppSubStatusEvents(appsub *appv1.Subscription, action string,
-	pkgStatuses []v1alpha1.SubscriptionUnitStatus, checkoutStatus *v1alpha1.CheckoutStatus) {
+	pkgStatuses []v1alpha1.SubscriptionUnitStatus, chkStatus *v1alpha1.CheckoutStatus) {
 	curUser := ""
 
 	if encodedUser, ok := appsub.GetAnnotations()[appv1.AnnotationUserIdentity]; ok {
@@ -398,9 +397,9 @@ func (sync *KubeSynchronizer) recordAppSubStatusEvents(appsub *appv1.Subscriptio
 	}
 
 	packageStatuses := fmt.Sprintf("AppSub: '%s/%s'; User: '%s'; Action: '%s'; ", appsub.Namespace, appsub.Name, curUser, action)
-	if checkoutStatus != nil {
-		packageStatuses += fmt.Sprintf("CheckoutStatus: 'Count|LatencyLast|LatencyMin|LatencyMax,%d|%d|%d|%d",
-			checkoutStatus.Count, checkoutStatus.LatencyLast, checkoutStatus.LatencyMin, checkoutStatus.LatencyMax)
+	if chkStatus != nil {
+		packageStatuses += fmt.Sprintf("Checkouts: SuccessfulCount: '%d'; FailedCount: '%d'",
+			chkStatus.SuccessfullCount, chkStatus.FailedCount)
 	}
 
 	packageStatuses += "PackageStatus: 'Name|Namespace|Apiversion|Kind|Phase|Message|LastUpdateTime"
