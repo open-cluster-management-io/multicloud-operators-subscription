@@ -62,6 +62,16 @@ var (
 		Phase:      string(appSubStatusV1alpha1.PackageDeployFailed),
 		Message:    "Success",
 	}
+
+	appSubChkStatus1 = &SubscriptionCheckoutStatus{
+		SuccessfullCount: 3,
+		FailedCount:      1,
+	}
+
+	appSubChkStatus2 = &SubscriptionCheckoutStatus{
+		SuccessfullCount: 5,
+		FailedCount:      2,
+	}
 )
 
 var _ = Describe("test create/update/delete appsub status for standalone and managed cluster", func() {
@@ -80,6 +90,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 			AppSub:                    hostSub1,
 			Action:                    "APPLY",
 			SubscriptionPackageStatus: appSubUnitStatuses,
+			CheckoutStatus:            appSubChkStatus1,
 		}
 
 		s := &KubeSynchronizer{
@@ -116,6 +127,8 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 		Expect(len(pkgstatuses.Items)).To(gomega.Equal(1))
 		Expect(pkgstatuses.Items[0].Name).To(gomega.Equal(pkgstatusName))
 		Expect(len(pkgstatuses.Items[0].Statuses.SubscriptionStatus)).To(gomega.Equal(1))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.SuccessfullCount).To(gomega.Equal(3))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.FailedCount).To(gomega.Equal(1))
 
 		// No cluster appsub report is created
 		appsubReport := &appSubStatusV1alpha1.SubscriptionReport{}
@@ -131,6 +144,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 			AppSub:                    hostSub1,
 			Action:                    "APPLY",
 			SubscriptionPackageStatus: appSubUnitStatuses,
+			CheckoutStatus:            appSubChkStatus2,
 		}
 		err = s.SyncAppsubClusterStatus(nil, updateAppsubClusterStatus, nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -143,6 +157,8 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 
 		Expect(pkgstatuses.Items[0].Name).To(gomega.Equal(pkgstatusName))
 		Expect(len(pkgstatuses.Items[0].Statuses.SubscriptionStatus)).To(gomega.Equal(2))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.SuccessfullCount).To(gomega.Equal(5))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.FailedCount).To(gomega.Equal(2))
 
 		// Delete
 		rmAppsubClusterStatus := SubscriptionClusterStatus{
