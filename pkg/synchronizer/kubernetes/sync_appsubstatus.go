@@ -167,8 +167,7 @@ func (sync *KubeSynchronizer) SyncAppsubClusterStatus(appsub *appv1.Subscription
 		var newCheckoutStatus *v1alpha1.CheckoutStatus
 		if appsubClusterStatus.CheckoutStatus != nil {
 			newCheckoutStatus = &v1alpha1.CheckoutStatus{
-				SuccessfullCount: appsubClusterStatus.CheckoutStatus.SuccessfullCount,
-				FailedCount:      appsubClusterStatus.CheckoutStatus.FailedCount,
+				Count: appsubClusterStatus.CheckoutStatus.Count,
 			}
 
 			klog.V(2).Infof("Subscription checkout status:%v", newCheckoutStatus)
@@ -257,8 +256,7 @@ func (sync *KubeSynchronizer) SyncAppsubClusterStatus(appsub *appv1.Subscription
 
 			klog.V(1).Infof("Update on managed cluster, appsubstatus:%v/%v", pkgstatus.Namespace, pkgstatus.Name)
 
-			newCheckoutStatus.SuccessfullCount += pkgstatus.Statuses.CheckoutStatus.SuccessfullCount
-			newCheckoutStatus.FailedCount += pkgstatus.Statuses.CheckoutStatus.FailedCount
+			newCheckoutStatus.Count += pkgstatus.Statuses.CheckoutStatus.Count
 
 			if appsub != nil {
 				sync.recordAppSubStatusEvents(appsub, "Update", newUnitStatus, newCheckoutStatus)
@@ -390,8 +388,7 @@ func (sync *KubeSynchronizer) recordAppSubStatusEvents(appsub *appv1.Subscriptio
 
 	packageStatuses := fmt.Sprintf("AppSub: '%s/%s'; User: '%s'; Action: '%s'; ", appsub.Namespace, appsub.Name, curUser, action)
 	if chkStatus != nil {
-		packageStatuses += fmt.Sprintf("Checkouts: SuccessfulCount: '%d'; FailedCount: '%d'",
-			chkStatus.SuccessfullCount, chkStatus.FailedCount)
+		packageStatuses += fmt.Sprintf("Checkouts: Count: '%d';", chkStatus.Count)
 	}
 
 	packageStatuses += "PackageStatus: 'Name|Namespace|Apiversion|Kind|Phase|Message|LastUpdateTime"
