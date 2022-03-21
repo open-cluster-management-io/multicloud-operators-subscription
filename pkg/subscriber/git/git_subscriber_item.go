@@ -179,7 +179,7 @@ func (ghsi *SubscriberItem) doSubscriptionWithRetries(retryInterval time.Duratio
 	}
 }
 
-func (ghsi *SubscriberItem) doSubscription() (err error) {
+func (ghsi *SubscriberItem) doSubscription() error {
 	hostkey := types.NamespacedName{Name: ghsi.Subscription.Name, Namespace: ghsi.Subscription.Namespace}
 	klog.Info("enter doSubscription: ", hostkey.String())
 
@@ -384,7 +384,7 @@ func (ghsi *SubscriberItem) doSubscription() (err error) {
 
 	allowedGroupResources, deniedGroupResources := utils.GetAllowDenyLists(*ghsi.Subscription)
 
-	chkoutStatusMap := map[string]string{"SUCCESSFUL_COUNT": strconv.Itoa(cloneCount)}
+	chkoutStatusMap := map[string]string{"COUNT": strconv.Itoa(cloneCount)}
 
 	if err := ghsi.synchronizer.ProcessSubResources(ghsi.Subscription, ghsi.resources,
 		allowedGroupResources, deniedGroupResources, ghsi.clusterAdmin, chkoutStatusMap); err != nil {

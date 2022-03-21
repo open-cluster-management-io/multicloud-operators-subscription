@@ -49,8 +49,7 @@ type SubscriptionUnitStatus struct {
 }
 
 type SubscriptionCheckoutStatus struct {
-	SuccessfullCount int
-	FailedCount      int
+	Count int
 }
 
 type SubscriptionClusterStatus struct {

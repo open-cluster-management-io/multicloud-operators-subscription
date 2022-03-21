@@ -64,8 +64,7 @@ var (
 		Statuses: SubscriptionClusterStatusMap{
 			SubscriptionStatus: []SubscriptionUnitStatus{*saStatus},
 			CheckoutStatus: CheckoutStatus{
-				SuccessfullCount: 2,
-				FailedCount:      1,
+				Count: 2,
 			},
 		},
 	}
@@ -92,8 +91,7 @@ func TestAppSubStatus(t *testing.T) {
 	g.Expect(fetched).To(gomega.Equal(updated))
 
 	// Test Checkout Status
-	g.Expect(fetched.Statuses.CheckoutStatus.SuccessfullCount).To(gomega.Equal(2))
-	g.Expect(fetched.Statuses.CheckoutStatus.FailedCount).To(gomega.Equal(1))
+	g.Expect(fetched.Statuses.CheckoutStatus.Count).To(gomega.Equal(2))
 
 	// Test Delete
 	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
