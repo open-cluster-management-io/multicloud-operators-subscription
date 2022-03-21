@@ -302,15 +302,9 @@ func (sync *KubeSynchronizer) ProcessSubResources(appsub *appv1alpha1.Subscripti
 	subChkStatus := &SubscriptionCheckoutStatus{}
 
 	if chkoutStatusMap != nil {
-		if sucChk, ok := chkoutStatusMap["SUCCESSFUL_COUNT"]; ok {
+		if sucChk, ok := chkoutStatusMap["COUNT"]; ok {
 			if parsedSuc, err := strconv.Atoi(sucChk); err == nil {
-				subChkStatus.SuccessfullCount = parsedSuc
-			}
-		}
-
-		if failChk, ok := chkoutStatusMap["FAILED_COUNT"]; ok {
-			if parsedFail, err := strconv.Atoi(failChk); err == nil {
-				subChkStatus.FailedCount = parsedFail
+				subChkStatus.Count = parsedSuc
 			}
 		}
 	}

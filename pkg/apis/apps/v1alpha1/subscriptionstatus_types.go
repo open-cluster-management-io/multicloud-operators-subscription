@@ -59,8 +59,7 @@ type SubscriptionUnitStatus struct {
 
 // CheckoutStatus defines the stauts of the checkout process.
 type CheckoutStatus struct {
-	SuccessfullCount int `json:"successfullCount"`
-	FailedCount      int `json:"failedCount"`
+	Count int `json:"count"`
 }
 
 // PackagePhase defines the phasing of a Package

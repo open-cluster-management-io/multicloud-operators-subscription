@@ -64,13 +64,11 @@ var (
 	}
 
 	appSubChkStatus1 = &SubscriptionCheckoutStatus{
-		SuccessfullCount: 3,
-		FailedCount:      1,
+		Count: 3,
 	}
 
 	appSubChkStatus2 = &SubscriptionCheckoutStatus{
-		SuccessfullCount: 5,
-		FailedCount:      2,
+		Count: 5,
 	}
 )
 
@@ -127,8 +125,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 		Expect(len(pkgstatuses.Items)).To(gomega.Equal(1))
 		Expect(pkgstatuses.Items[0].Name).To(gomega.Equal(pkgstatusName))
 		Expect(len(pkgstatuses.Items[0].Statuses.SubscriptionStatus)).To(gomega.Equal(1))
-		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.SuccessfullCount).To(gomega.Equal(3))
-		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.FailedCount).To(gomega.Equal(1))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.Count).To(gomega.Equal(3))
 
 		// No cluster appsub report is created
 		appsubReport := &appSubStatusV1alpha1.SubscriptionReport{}
@@ -157,8 +154,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 
 		Expect(pkgstatuses.Items[0].Name).To(gomega.Equal(pkgstatusName))
 		Expect(len(pkgstatuses.Items[0].Statuses.SubscriptionStatus)).To(gomega.Equal(2))
-		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.SuccessfullCount).To(gomega.Equal(8))
-		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.FailedCount).To(gomega.Equal(3))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.Count).To(gomega.Equal(8))
 
 		// Delete
 		rmAppsubClusterStatus := SubscriptionClusterStatus{
@@ -224,8 +220,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(pkgstatuses.Items)).To(gomega.Equal(1))
 		Expect(pkgstatuses.Items[0].Name).To(gomega.Equal(pkgstatusName))
-		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.SuccessfullCount).To(gomega.Equal(0))
-		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.FailedCount).To(gomega.Equal(0))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.Count).To(gomega.Equal(0))
 
 		// Cluster appsub report is created with a deployed result
 		cAppsubReport := &appSubStatusV1alpha1.SubscriptionReport{}
