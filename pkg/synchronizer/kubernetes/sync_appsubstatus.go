@@ -258,15 +258,8 @@ func (sync *KubeSynchronizer) SyncAppsubClusterStatus(appsub *appv1.Subscription
 
 			klog.V(1).Infof("Update on managed cluster, appsubstatus:%v/%v", pkgstatus.Namespace, pkgstatus.Name)
 
-			newCheckoutStatus.Count += pkgstatus.Statuses.CheckoutStatus.Count
-			// if existing min latency is lower the new one, use existing
-			if pkgstatus.Statuses.CheckoutStatus.LatencyMin > 0 && pkgstatus.Statuses.CheckoutStatus.LatencyMin < newCheckoutStatus.LatencyMin {
-				newCheckoutStatus.LatencyMin = pkgstatus.Statuses.CheckoutStatus.LatencyMin
-			}
-			// if existing max latency is higher the new one, use existing
-			if pkgstatus.Statuses.CheckoutStatus.LatencyMax > newCheckoutStatus.LatencyMax {
-				newCheckoutStatus.LatencyMax = pkgstatus.Statuses.CheckoutStatus.LatencyMax
-			}
+			newCheckoutStatus.SuccessfullCount += pkgstatus.Statuses.CheckoutStatus.SuccessfullCount
+			newCheckoutStatus.FailedCount += pkgstatus.Statuses.CheckoutStatus.FailedCount
 
 			if appsub != nil {
 				sync.recordAppSubStatusEvents(appsub, "Update", newUnitStatus, newCheckoutStatus)
