@@ -257,7 +257,7 @@ func (ghsi *SubscriberItem) doSubscription() error {
 	}
 
 	//Clone the git repo
-	commitID, cloneCount, err := ghsi.cloneGitRepo()
+	commitID, checkoutSummary, err := ghsi.cloneGitRepo()
 	if err != nil {
 		klog.Error(err, "Unable to clone the git repo ", ghsi.Channel.Spec.Pathname)
 		ghsi.successful = false
@@ -382,10 +382,8 @@ func (ghsi *SubscriberItem) doSubscription() error {
 
 	allowedGroupResources, deniedGroupResources := utils.GetAllowDenyLists(*ghsi.Subscription)
 
-	chkoutStatusMap := map[string]string{"COUNT": strconv.Itoa(cloneCount)}
-
 	if err := ghsi.synchronizer.ProcessSubResources(ghsi.Subscription, ghsi.resources,
-		allowedGroupResources, deniedGroupResources, ghsi.clusterAdmin, chkoutStatusMap); err != nil {
+		allowedGroupResources, deniedGroupResources, ghsi.clusterAdmin, checkoutSummary); err != nil {
 		klog.Error(err)
 
 		ghsi.successful = false
@@ -715,7 +713,7 @@ func (ghsi *SubscriberItem) subscribeHelmCharts(indexFile *repo.IndexFile) (err 
 	return err
 }
 
-func (ghsi *SubscriberItem) cloneGitRepo() (commitID string, cloneCount int, err error) {
+func (ghsi *SubscriberItem) cloneGitRepo() (commitID string, checkoutSummary utils.CheckoutSummary, err error) {
 	annotations := ghsi.Subscription.GetAnnotations()
 
 	cloneDepth := 1
@@ -744,7 +742,7 @@ func (ghsi *SubscriberItem) cloneGitRepo() (commitID string, cloneCount int, err
 	primaryChannelConnectionConfig, err := getChannelConnectionConfig(ghsi.ChannelSecret, ghsi.ChannelConfigMap)
 
 	if err != nil {
-		return "", 0, err
+		return "", checkoutSummary, err
 	}
 
 	primaryChannelConnectionConfig.RepoURL = ghsi.Channel.Spec.Pathname
@@ -757,7 +755,7 @@ func (ghsi *SubscriberItem) cloneGitRepo() (commitID string, cloneCount int, err
 		secondaryChannelConnectionConfig, err := getChannelConnectionConfig(ghsi.SecondaryChannelSecret, ghsi.SecondaryChannelConfigMap)
 
 		if err != nil {
-			return "", 0, err
+			return "", checkoutSummary, err
 		}
 
 		secondaryChannelConnectionConfig.RepoURL = ghsi.SecondaryChannel.Spec.Pathname
