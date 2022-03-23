@@ -255,7 +255,7 @@ func (ghsi *SubscriberItem) doSubscription() (err error) {
 	}
 
 	//Clone the git repo
-	commitID, cloneCount, err := ghsi.cloneGitRepo()
+	commitID, checkoutSummary, err := ghsi.cloneGitRepo()
 	if err != nil {
 		klog.Error(err, "Unable to clone the git repo ", ghsi.Channel.Spec.Pathname)
 		ghsi.successful = false
@@ -380,10 +380,8 @@ func (ghsi *SubscriberItem) doSubscription() (err error) {
 
 	allowedGroupResources, deniedGroupResources := utils.GetAllowDenyLists(*ghsi.Subscription)
 
-	chkoutStatusMap := map[string]string{"SUCCESSFUL_COUNT": strconv.Itoa(cloneCount)}
-
 	if err := ghsi.synchronizer.ProcessSubResources(ghsi.Subscription, ghsi.resources,
-		allowedGroupResources, deniedGroupResources, ghsi.clusterAdmin, chkoutStatusMap); err != nil {
+		allowedGroupResources, deniedGroupResources, ghsi.clusterAdmin, checkoutSummary); err != nil {
 		klog.Error(err)
 
 		ghsi.successful = false

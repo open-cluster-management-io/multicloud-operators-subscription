@@ -13,7 +13,6 @@ package kubernetes
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -224,7 +223,7 @@ func (sync *KubeSynchronizer) PurgeAllSubscribedResources(appsub *appv1alpha1.Su
 }
 
 func (sync *KubeSynchronizer) ProcessSubResources(appsub *appv1alpha1.Subscription, resources []ResourceUnit,
-	allowlist, denyList map[string]map[string]string, isAdmin bool, chkoutStatusMap map[string]string) error {
+	allowlist, denyList map[string]map[string]string, isAdmin bool, checkoutSummary utils.CheckoutSummary) error {
 	hostSub := types.NamespacedName{
 		Namespace: appsub.GetNamespace(),
 		Name:      appsub.GetName(),
@@ -299,28 +298,12 @@ func (sync *KubeSynchronizer) ProcessSubResources(appsub *appv1alpha1.Subscripti
 		appSubUnitStatuses = append(appSubUnitStatuses, appSubUnitStatus)
 	}
 
-	subChkStatus := &SubscriptionCheckoutStatus{}
-
-	if chkoutStatusMap != nil {
-		if sucChk, ok := chkoutStatusMap["SUCCESSFUL_COUNT"]; ok {
-			if parsedSuc, err := strconv.Atoi(sucChk); err == nil {
-				subChkStatus.SuccessfullCount = parsedSuc
-			}
-		}
-
-		if failChk, ok := chkoutStatusMap["FAILED_COUNT"]; ok {
-			if parsedFail, err := strconv.Atoi(failChk); err == nil {
-				subChkStatus.FailedCount = parsedFail
-			}
-		}
-	}
-
 	appsubClusterStatus := SubscriptionClusterStatus{
 		Cluster:                   sync.SynchronizerID.Name,
 		AppSub:                    hostSub,
 		Action:                    "APPLY",
 		SubscriptionPackageStatus: appSubUnitStatuses,
-		CheckoutStatus:            subChkStatus,
+		CheckoutSummary:           checkoutSummary,
 	}
 
 	err := sync.SyncAppsubClusterStatus(appsub, appsubClusterStatus, nil, nil)
