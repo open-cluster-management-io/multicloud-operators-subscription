@@ -59,7 +59,10 @@ type SubscriptionUnitStatus struct {
 
 // CheckoutStatus defines the stauts of the checkout process.
 type CheckoutStatus struct {
-	Count int `json:"count"`
+	Count       int `json:"count"`
+	LatencyLast int `json:"latencyLast"`
+	LatencyMin  int `json:"latencyMin"`
+	LatencyMax  int `json:"latencyMax"`
 }
 
 // PackagePhase defines the phasing of a Package
