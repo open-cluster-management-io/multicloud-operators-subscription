@@ -98,6 +98,14 @@ spec:
           statuses:
             description: Statuses represents all the resources deployed by the subscription per cluster
             properties:
+              checkout:
+                description: CheckoutStatus defines the stauts of the checkout process.
+                properties:
+                  count:
+                    type: integer
+                required:
+                - count
+                type: object
               packages:
                 items:
                   description: SubscriptionUnitStatus defines status of a package deployment.
