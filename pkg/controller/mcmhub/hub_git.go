@@ -89,7 +89,7 @@ type RepoRegistery struct {
 	branchs map[string]*branchInfo
 }
 
-type cloneFunc func(cloneOptions *utils.GitCloneOption) (string, int, error)
+type cloneFunc func(cloneOptions *utils.GitCloneOption) (string, utils.CheckoutSummary, error)
 
 type dirResolver func(*subv1.Subscription) string
 
@@ -183,7 +183,7 @@ func (h *HubGitOps) GitWatch(ctx context.Context) {
 			// Otherwise, compare the latest commit of the repo branch to the currently deployed commit
 			h.logger.Info(fmt.Sprintf("Checking commit for Git: %s Branch: %s", url, branchInfoName))
 			newCommit, _, err := h.cloneFunc(&branchInfo.gitCloneOptions)
-			// TODO: handle cloneCount
+			// NOTE: anything to do with the checkout summary here?
 
 			if err != nil {
 				h.logger.Error(err, " failed to get the commit SHA")
@@ -215,7 +215,7 @@ func (h *HubGitOps) GitWatch(ctx context.Context) {
 
 			if !cloneDone {
 				if _, _, err := h.cloneFunc(&branchInfo.gitCloneOptions); err != nil {
-					// TODO: handle cloneCount
+					// NOTE: anything to do with the checkout summary here?
 					h.logger.Error(err, err.Error())
 				}
 			}
@@ -473,7 +473,7 @@ func (h *HubGitOps) RegisterBranch(subIns *subv1.Subscription) error {
 	}
 
 	commitID, _, err := h.cloneFunc(cloneOptions)
-	// TODO: handle cloneCount
+	// NOTE: anything to do with the checkout summary here?
 	if err != nil {
 		h.logger.Error(err, "failed to get commitID from initialDownload")
 		return err
@@ -615,7 +615,7 @@ func (h *HubGitOps) DownloadAnsibleHookResource(subIns *subv1.Subscription) erro
 	return nil
 }
 
-func cloneGitRepoBranch(cloneOptions *utils.GitCloneOption) (string, int, error) {
+func cloneGitRepoBranch(cloneOptions *utils.GitCloneOption) (string, utils.CheckoutSummary, error) {
 	return utils.CloneGitRepo(cloneOptions)
 }
 

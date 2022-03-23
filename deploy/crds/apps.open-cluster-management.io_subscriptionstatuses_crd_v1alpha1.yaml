@@ -35,12 +35,21 @@ spec:
             description: Statuses represents all the resources deployed by the subscription per cluster
             properties:
               checkout:
-                description: CheckoutStatus defines the stauts of the checkout process.
+                description: CheckoutStatus defines the status of the checkout process.
                 properties:
                   count:
                     type: integer
+                  latencyLast:
+                    type: integer
+                  latencyMin:
+                    type: integer
+                  latencyMax:
+                    type: integer
                 required:
                 - count
+                - latencyLast
+                - latencyMin
+                - latencyMax
                 type: object
               packages:
                 items:

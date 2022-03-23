@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	appv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
 	appSubStatusV1alpha1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1alpha1"
+	"open-cluster-management.io/multicloud-operators-subscription/pkg/utils"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -61,12 +62,18 @@ var (
 		Message:    "Success",
 	}
 
-	appSubChkStatus1 = &SubscriptionCheckoutStatus{
-		Count: 3,
+	appSubCheckoutSummary1 = utils.CheckoutSummary{
+		SuccessfulCount:     2,
+		FailedCount:         0,
+		SuccessfulLatencyMS: 3556,
+		FailedLatencyMS:     0,
 	}
 
-	appSubChkStatus2 = &SubscriptionCheckoutStatus{
-		Count: 5,
+	appSubCheckoutSummary2 = utils.CheckoutSummary{
+		SuccessfulCount:     1,
+		FailedCount:         1,
+		SuccessfulLatencyMS: 1475,
+		FailedLatencyMS:     1336,
 	}
 )
 
@@ -86,7 +93,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 			AppSub:                    hostSub1,
 			Action:                    "APPLY",
 			SubscriptionPackageStatus: appSubUnitStatuses,
-			CheckoutStatus:            appSubChkStatus1,
+			CheckoutSummary:           appSubCheckoutSummary1,
 		}
 
 		s := &KubeSynchronizer{
@@ -123,7 +130,11 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 		Expect(len(pkgstatuses.Items)).To(Equal(1))
 		Expect(pkgstatuses.Items[0].Name).To(Equal(pkgstatusName))
 		Expect(len(pkgstatuses.Items[0].Statuses.SubscriptionStatus)).To(Equal(1))
-		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.Count).To(Equal(3))
+		// checkout status
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.Count).To(Equal(2))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.LatencyLast).To(Equal(3556))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.LatencyMin).To(Equal(3556))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.LatencyMax).To(Equal(3556))
 
 		// No cluster appsub report is created
 		appsubReport := &appSubStatusV1alpha1.SubscriptionReport{}
@@ -139,7 +150,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 			AppSub:                    hostSub1,
 			Action:                    "APPLY",
 			SubscriptionPackageStatus: appSubUnitStatuses,
-			CheckoutStatus:            appSubChkStatus2,
+			CheckoutSummary:           appSubCheckoutSummary2,
 		}
 		err = s.SyncAppsubClusterStatus(nil, updateAppsubClusterStatus, nil, nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -152,7 +163,11 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 
 		Expect(pkgstatuses.Items[0].Name).To(Equal(pkgstatusName))
 		Expect(len(pkgstatuses.Items[0].Statuses.SubscriptionStatus)).To(Equal(2))
-		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.Count).To(Equal(8))
+		// checkout status
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.Count).To(Equal(4))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.LatencyLast).To(Equal(2811)) // 1475 + 1336
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.LatencyMin).To(Equal(2811))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.LatencyMax).To(Equal(3556))
 
 		// Delete
 		rmAppsubClusterStatus := SubscriptionClusterStatus{
