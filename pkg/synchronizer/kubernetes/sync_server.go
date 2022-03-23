@@ -48,10 +48,6 @@ type SubscriptionUnitStatus struct {
 	Message    string
 }
 
-type SubscriptionCheckoutStatus struct {
-	Count int
-}
-
 type SubscriptionClusterStatus struct {
 	Cluster                   string
 	AppSub                    types.NamespacedName /* hosting appsub */
