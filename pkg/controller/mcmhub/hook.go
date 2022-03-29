@@ -658,7 +658,7 @@ func GetClustersByPlacement(instance *subv1.Subscription, kubeclient client.Clie
 		if instance.Spec.Placement.PlacementRef != nil {
 			clusters, err = getClustersFromPlacementRef(instance, kubeclient, logger)
 		} else {
-			clustermap, err := placementutils.PlaceByGenericPlacmentFields(kubeclient, instance.Spec.Placement.GenericPlacementFields, nil, instance)
+			clustermap, err := placementutils.PlaceByGenericPlacmentFields(kubeclient, instance.Spec.Placement.GenericPlacementFields, instance)
 			if err != nil {
 				logger.Error(err, " - Failed to get clusters from generic fields with error.")
 				return nil, err
@@ -685,7 +685,10 @@ func getClustersFromPlacementRef(instance *subv1.Subscription, kubeclient client
 	pref := instance.Spec.Placement.PlacementRef
 
 	if (len(pref.Kind) > 0 && pref.Kind != "PlacementRule" && pref.Kind != "Placement") ||
-		(len(pref.APIVersion) > 0 && pref.APIVersion != "apps.open-cluster-management.io/v1" && pref.APIVersion != "cluster.open-cluster-management.io/v1alpha1") {
+		(len(pref.APIVersion) > 0 &&
+			pref.APIVersion != "apps.open-cluster-management.io/v1" &&
+			pref.APIVersion != "cluster.open-cluster-management.io/v1alpha1" &&
+			pref.APIVersion != "cluster.open-cluster-management.io/v1beta1") {
 		logger.Info(fmt.Sprintln("Unsupported placement reference:", instance.Spec.Placement.PlacementRef))
 
 		return nil, nil

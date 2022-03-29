@@ -1,5 +1,5 @@
 FROM registry.ci.openshift.org/stolostron/builder:go1.17-linux AS plugin-builder
-ENV POLICY_GENERATOR_TAG=v1.5.0
+ENV POLICY_GENERATOR_TAG=v1.6.0
 
 WORKDIR /policy-generator
 RUN curl -L -o "policy-generator-plugin.tar.gz" \
@@ -14,7 +14,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 RUN  microdnf update -y \ 
         && rpm -e --nodeps tzdata \
         && microdnf install tzdata \
-        && microdnf install git \
+        && microdnf install git-core \
         && microdnf install openssh-clients \
         && microdnf clean all
 

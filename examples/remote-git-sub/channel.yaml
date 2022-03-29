@@ -4,5 +4,5 @@ metadata:
   name: gitops
   namespace: gitops-chn-ns
 spec:
-  pathname: 'https://github.com/<_replace_me_>/multicloud-operators-subscription.git'
-  type: GitHub
+  pathname: 'https://github.com/open-cluster-management-io/multicloud-operators-subscription.git'
+  type: Git

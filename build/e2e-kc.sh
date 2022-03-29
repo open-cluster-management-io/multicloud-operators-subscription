@@ -39,6 +39,13 @@ else
     exit 1
 fi
 
+if kubectl get subscriptionstatus.apps.open-cluster-management.io demo-subscription -o yaml | grep InstallSuccessful; then 
+    echo "01-placement: found InstallSuccessful in subscription status output"
+else
+    echo "01-placement: FAILED: InstallSuccessful is not in the subscription status output"
+    exit 1
+fi
+
 if kubectl get pod | grep nginx-ingress-simple-controller | grep Running; then
     echo "01-placement: appsub deployment pod status is Running"
 else
@@ -76,6 +83,13 @@ if kubectl get subscriptions.apps.open-cluster-management.io nginx-sub | grep Su
     echo "02-placementrule: cluster1 subscriptions.apps.open-cluster-management.io status is Subscribed"
 else
     echo "02-placementrule FAILED: cluster1 subscriptions.apps.open-cluster-management.io status is not Subscribed"
+    exit 1
+fi
+
+if kubectl get subscriptionstatus.apps.open-cluster-management.io nginx-sub -o yaml | grep InstallSuccessful; then 
+    echo "02-placementrule: found InstallSuccessful in subscription status output"
+else
+    echo "02-placementrule: FAILED: InstallSuccessful is not in the subscription status output"
     exit 1
 fi
 
@@ -153,17 +167,129 @@ kubectl config use-context kind-hub
 kubectl apply -f test/e2e/cases/05-ansiblejob/
 sleep 10
 
-if kubectl get ansiblejobs.tower.ansible.com | grep prehook-test; then 
-    echo "05-ansiblejob: found ansiblejobs.tower.ansible.com"
-else
-    echo "05-ansiblejob: FAILED: ansiblejobs.tower.ansible.com not found"
-    exit 1
-fi
 if kubectl get subscriptions.apps.open-cluster-management.io ansible-hook -o yaml | grep lastprehookjob | grep prehook-test; then 
     echo "05-ansiblejob: found ansiblejob CR name in subscription output"
 else
     echo "05-ansiblejob: FAILED: ansiblejob CR name is not in the subscription output"
     exit 1
 fi
-
+if kubectl get ansiblejobs.tower.ansible.com | grep prehook-test; then 
+    echo "05-ansiblejob: found ansiblejobs.tower.ansible.com"
+else
+    echo "05-ansiblejob: FAILED: ansiblejobs.tower.ansible.com not found"
+    exit 1
+fi
+kubectl delete -f test/e2e/cases/05-ansiblejob/
+sleep 5
 echo "PASSED test case 05-ansiblejob"
+
+### 06-ansiblejob-post
+echo "STARTING test case 06-ansiblejob-post"
+kubectl config use-context kind-hub
+kubectl apply -f test/e2e/cases/06-ansiblejob-post/
+sleep 30
+
+if kubectl get subscriptions.apps.open-cluster-management.io ansible-hook -o yaml | grep lastposthookjob | grep posthook-test; then 
+    echo "06-ansiblejob-post: found ansiblejob CR name in subscription output"
+else
+    echo "06-ansiblejob-post: FAILED: ansiblejob CR name is not in the subscription output"
+    exit 1
+fi
+if kubectl get ansiblejobs.tower.ansible.com | grep posthook-test; then 
+    echo "06-ansiblejob-post: found ansiblejobs.tower.ansible.com"
+else
+    echo "06-ansiblejob-post: FAILED: ansiblejobs.tower.ansible.com not found"
+    exit 1
+fi
+echo "PASSED test case 06-ansiblejob-post"
+
+### 07-helm-install-error
+echo "STARTING test case 07-helm-install-error"
+kubectl config use-context kind-hub
+kubectl apply -f test/e2e/cases/07-helm-install-error/
+sleep 30
+kubectl config use-context kind-cluster1
+if kubectl get subscriptionstatus.apps.open-cluster-management.io ingress -o yaml | grep "phase: Failed"; then 
+    echo "07-helm-install-error: found failed phase in subscription status output"
+else
+    echo "07-helm-install-error: FAILED: failed phase is not in the subscription status output"
+    exit 1
+fi
+kubectl config use-context kind-hub
+kubectl delete -f test/e2e/cases/07-helm-install-error/
+sleep 10
+echo "PASSED test case 07-helm-install-error"
+
+### 08-helm-upgrade-error
+echo "STARTING test case 08-helm-upgrade-error"
+kubectl config use-context kind-hub
+kubectl apply -f test/e2e/cases/08-helm-upgrade-error/install
+sleep 30
+kubectl config use-context kind-cluster1
+if kubectl get subscriptionstatus.apps.open-cluster-management.io ingress -o yaml | grep "phase: Deployed"; then 
+    echo "08-helm-upgrade-error: found deployed phase in subscription status output"
+else
+    echo "08-helm-upgrade-error: FAILED: deployed phase is not in the subscription status output"
+    exit 1
+fi
+kubectl config use-context kind-hub
+kubectl apply -f test/e2e/cases/08-helm-upgrade-error/upgrade/hub
+sleep 10
+kubectl config use-context kind-cluster1
+kubectl apply -f test/e2e/cases/08-helm-upgrade-error/upgrade/managed
+sleep 10
+if kubectl get subscriptionstatus.apps.open-cluster-management.io ingress -o yaml | grep "phase: Failed"; then 
+    echo "08-helm-upgrade-error: found failed phase in subscription status output"
+else
+    echo "08-helm-upgrade-error: FAILED: failed phase is not in the subscription status output"
+    exit 1
+fi
+kubectl config use-context kind-hub
+kubectl delete -f test/e2e/cases/08-helm-upgrade-error/install
+sleep 10
+echo "PASSED test case 08-helm-upgrade-error"
+
+### 09-helm-missing-phase
+echo "STARTING test case 09-helm-missing-phase"
+kubectl config use-context kind-hub
+kubectl apply -f test/e2e/cases/09-helm-missing-phase/
+sleep 30
+kubectl config use-context kind-cluster1
+if kubectl get subscriptionstatus.apps.open-cluster-management.io preinstall-hook -o yaml | grep "kind: Deployment"; then 
+    echo "09-helm-missing-phase: found deployment kind in subscription status output"
+else
+    echo "09-helm-missing-phase: FAILED: deployment kind is not in the subscription status output"
+    exit 1
+fi
+if kubectl get subscriptionstatus.apps.open-cluster-management.io preinstall-hook -o yaml | grep "phase"; then 
+    echo "09-helm-missing-phase: FAILED: found phase in the subscription status output"
+    exit 1
+else
+    echo "09-helm-missing-phase: phase is not in subscription status output"
+fi
+kubectl config use-context kind-hub
+echo "PASSED test case 09-helm-missing-phase"
+
+### 10-cluster-override-ns
+echo "STARTING test 10-cluster-override-ns"
+kubectl config use-context kind-hub
+kubectl apply -f test/e2e/cases/10-cluster-override-ns/
+sleep 30
+kubectl config use-context kind-cluster1
+if kubectl -n test-10 get pod | grep nginx-placement | grep Running; then
+    echo "10-cluster-override-ns: appsub deployment pod status is Running"
+else
+    echo "10-cluster-override-ns FAILED: appsub deployment pod status is Running"
+    exit 1
+fi
+kubectl config use-context kind-hub
+kubectl delete -f test/e2e/cases/10-cluster-override-ns/
+sleep 30
+kubectl config use-context kind-cluster1
+if kubectl -n test-10 get pod | grep nginx-placement; then
+    echo "10-cluster-override-ns FAILED: appsub deployment pod is not deleted"
+    exit 1
+else
+    echo "10-cluster-override-ns: appsub deployment pod is deleted"
+fi
+echo "PASSED test case 10-cluster-override-ns"

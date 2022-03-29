@@ -2,10 +2,15 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: "{{ template "application-manager.fullname" . }}-predelete"
+  namespace: {{ .Release.Namespace }}
   labels:
     component: "application-manager"
     "open-cluster-management.io/addon-pre-delete": ""
 spec:
+  manualSelector: true
+  selector:
+    matchLabels:
+      component: "application-manager"
   template:
     metadata:
       name: "{{ template "application-manager.fullname" . }}-predelete"

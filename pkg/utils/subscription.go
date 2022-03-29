@@ -30,10 +30,11 @@ import (
 	chnv1 "open-cluster-management.io/multicloud-operators-channel/pkg/apis/apps/v1"
 
 	addonV1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
-	clusterapi "open-cluster-management.io/api/cluster/v1alpha1"
+	clusterapi "open-cluster-management.io/api/cluster/v1beta1"
 	manifestWorkV1 "open-cluster-management.io/api/work/v1"
 	appv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
 	appsubReportV1alpha1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1alpha1"
+	managedClusterView "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/view/v1beta1"
 
 	corev1 "k8s.io/api/core/v1"
 	clientsetx "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -65,9 +66,26 @@ const (
 	annotationsSep         = ","
 	maxGeneratedNameLength = maxNameLength - randomLength - 1
 	// klusterletagentaddon secret token reconcile
-	addonServiceAccountName      = "klusterlet-addon-appmgr"
+	addonServiceAccountName      = "application-manager"
 	addonServiceAccountNamespace = "open-cluster-management-agent-addon"
 )
+
+// PlacementDecisionPredicateFunctions filters PlacementDecision status decisions update
+var PlacementDecisionPredicateFunctions = predicate.Funcs{
+	UpdateFunc: func(e event.UpdateEvent) bool {
+		newPd := e.ObjectNew.(*clusterapi.PlacementDecision)
+		oldPd := e.ObjectOld.(*clusterapi.PlacementDecision)
+
+		return !reflect.DeepEqual(newPd.Status.Decisions, oldPd.Status.Decisions)
+	},
+	CreateFunc: func(e event.CreateEvent) bool {
+		return true
+	},
+
+	DeleteFunc: func(e event.DeleteEvent) bool {
+		return true
+	},
+}
 
 func IsSubscriptionResourceChanged(oSub, nSub *appv1.Subscription) bool {
 	if IsSubscriptionBasicChanged(oSub, nSub) {
@@ -669,6 +687,7 @@ func ValidatePackagesInSubscriptionStatus(statusClient client.StatusClient, sub 
 		klog.V(10).Info("Updating", sub.Status, sub.Status.Statuses["/"])
 
 		sub.Status.LastUpdateTime = metav1.Now()
+
 		err = statusClient.Status().Update(context.TODO(), sub)
 		// want to print out the error log before leave
 		if err != nil {
@@ -677,6 +696,20 @@ func ValidatePackagesInSubscriptionStatus(statusClient client.StatusClient, sub 
 	}
 
 	return err
+}
+
+func UpdateLastUpdateTime(clt client.Client, instance *appv1.Subscription) {
+	curSub := &appv1.Subscription{}
+	if err := clt.Get(context.TODO(), types.NamespacedName{Name: instance.GetName(), Namespace: instance.GetNamespace()}, curSub); err != nil {
+		klog.Warning("Failed to get appsub to update LastUpdateTime", err)
+		return
+	}
+
+	curSub.Status.LastUpdateTime = metav1.Now()
+
+	if err := clt.Status().Update(context.TODO(), curSub); err != nil {
+		klog.Warning("Failed to update LastUpdateTime", err)
+	}
 }
 
 // OverrideResourceBySubscription alter the given template with overrides
@@ -1286,6 +1319,24 @@ func FetchChannelReferences(clt client.Client, chn chnv1.Channel) (sec *corev1.S
 	return sec, cm
 }
 
+// IsReadyManagedClusterView check if managed cluster view API is ready or not.
+func IsReadyManagedClusterView(clReader client.Reader) bool {
+	viewList := &managedClusterView.ManagedClusterViewList{}
+
+	listopts := &client.ListOptions{}
+
+	err := clReader.List(context.TODO(), viewList, listopts)
+	if err != nil {
+		klog.Error("Managed Cluster View API NOT ready: ", err)
+
+		return false
+	}
+
+	klog.Info("Managed Cluster View API API is ready")
+
+	return true
+}
+
 // IsReadyPlacementDecision check if Placement Decision API is ready or not.
 func IsReadyPlacementDecision(clReader client.Reader) bool {
 	pdlist := &clusterapi.PlacementDecisionList{}
@@ -1308,7 +1359,7 @@ func IsReadyPlacementDecision(clReader client.Reader) bool {
 		return false
 	}
 
-	klog.Error("Placement Decision and Cluster Management Addon APIs are ready")
+	klog.Info("Placement Decision and Cluster Management Addon APIs are ready")
 
 	return true
 }

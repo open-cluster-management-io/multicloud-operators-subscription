@@ -27,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog/v2"
-	clusterapi "open-cluster-management.io/api/cluster/v1alpha1"
+	clusterapi "open-cluster-management.io/api/cluster/v1beta1"
 	placementruleapi "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/placementrule/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -39,7 +39,7 @@ const (
 
 // syncPlacementDecisions create/update/delete placementdecisions based on PlacementRule's status.decisions
 // based on https://github.com/open-cluster-management-io/placement/blob/v0.2.0/pkg/controllers/scheduling/scheduling_controller.go#L339
-func (r *ReconcilePlacementRule) syncPlacementDecisions(ctx context.Context,
+func (r *ReconcilePlacementRuleStatus) syncPlacementDecisions(ctx context.Context,
 	placementRule placementruleapi.PlacementRule) error {
 	klog.Info("syncPlacementDecisions placementrule ", placementRule.Namespace, "/", placementRule.Name)
 
@@ -139,7 +139,7 @@ func (r *ReconcilePlacementRule) syncPlacementDecisions(ctx context.Context,
 
 // createOrUpdatePlacementDecision updates or creates a new PlacementDecision if it does not exist
 // based on https://github.com/open-cluster-management-io/placement/blob/v0.2.0/pkg/controllers/scheduling/scheduling_controller.go#L419
-func (r *ReconcilePlacementRule) createOrUpdatePlacementDecision(
+func (r *ReconcilePlacementRuleStatus) createOrUpdatePlacementDecision(
 	ctx context.Context,
 	placementRule placementruleapi.PlacementRule,
 	placementDecisionName string,
