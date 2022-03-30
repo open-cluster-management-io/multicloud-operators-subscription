@@ -842,7 +842,7 @@ metadata:
 	err = yaml.Unmarshal([]byte(subscriptionYAML), &subscription)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
-	g.Expect(IsClusterAdmin(c, subscription, nil)).To(gomega.BeFalse())
+	g.Expect(IsClusterAdmin(c, subscription, nil)).To(gomega.BeTrue())
 }
 
 func subAdminClusterRole() *rbacv1.ClusterRole {
