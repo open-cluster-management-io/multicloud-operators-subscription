@@ -53,6 +53,7 @@ type SubscriptionClusterStatus struct {
 	AppSub                    types.NamespacedName /* hosting appsub */
 	Action                    string               /* "APPLY" or "DELETE" */
 	SubscriptionPackageStatus []SubscriptionUnitStatus
+	CheckoutSummary           utils.CheckoutSummary
 }
 
 // KubeSynchronizer handles resources to a kube endpoint.

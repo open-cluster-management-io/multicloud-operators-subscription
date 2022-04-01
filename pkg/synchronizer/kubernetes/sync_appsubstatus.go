@@ -143,14 +143,28 @@ func (sync *KubeSynchronizer) SyncAppsubClusterStatus(appsub *appv1.Subscription
 
 		klog.V(2).Infof("Subscription unit statuses:%v", newUnitStatus)
 
+		checkoutSummary := appsubClusterStatus.CheckoutSummary
+		klog.V(2).Infof("Subscription checkout summary:%v", checkoutSummary)
+
+		// NOTE: the CRD is not reflecting successful vs failed checkouts
+		totalCount := checkoutSummary.SuccessfulCount + checkoutSummary.FailedCount
+		totalLatency := checkoutSummary.SuccessfulLatencyMS + checkoutSummary.FailedLatencyMS
+
+		newCheckoutStatus := &v1alpha1.CheckoutStatus{
+			Count:       totalCount,
+			LatencyLast: totalLatency,
+			LatencyMin:  totalLatency,
+			LatencyMax:  totalLatency,
+		}
+
 		if !foundPkgStatus {
 			if appsub != nil {
-				sync.recordAppSubStatusEvents(appsub, "Create", newUnitStatus)
+				sync.recordAppSubStatusEvents(appsub, "Create", newUnitStatus, newCheckoutStatus)
 			}
 
 			// Create new appsubstatus
 			pkgstatus = buildAppSubStatus(pkgstatusName, pkgstatusNs, appsubName,
-				appsubClusterStatus.AppSub.Namespace, appsubClusterStatus.Cluster, newUnitStatus)
+				appsubClusterStatus.AppSub.Namespace, appsubClusterStatus.Cluster, newUnitStatus, newCheckoutStatus)
 			klog.Infof("Creating new appsubstatus: %v/%v", pkgstatus.Namespace, pkgstatus.Name)
 
 			// Create appsubstatus on appSub NS
@@ -223,11 +237,22 @@ func (sync *KubeSynchronizer) SyncAppsubClusterStatus(appsub *appv1.Subscription
 
 			klog.V(1).Infof("Update on managed cluster, appsubstatus:%v/%v", pkgstatus.Namespace, pkgstatus.Name)
 
+			newCheckoutStatus.Count += pkgstatus.Statuses.CheckoutStatus.Count
+			// if existing min latency is lower the new one, use existing
+			if pkgstatus.Statuses.CheckoutStatus.LatencyMin > 0 && pkgstatus.Statuses.CheckoutStatus.LatencyMin < newCheckoutStatus.LatencyMin {
+				newCheckoutStatus.LatencyMin = pkgstatus.Statuses.CheckoutStatus.LatencyMin
+			}
+			// if existing max latency is higher the new one, use existing
+			if pkgstatus.Statuses.CheckoutStatus.LatencyMax > newCheckoutStatus.LatencyMax {
+				newCheckoutStatus.LatencyMax = pkgstatus.Statuses.CheckoutStatus.LatencyMax
+			}
+
 			if appsub != nil {
-				sync.recordAppSubStatusEvents(appsub, "Update", newUnitStatus)
+				sync.recordAppSubStatusEvents(appsub, "Update", newUnitStatus, newCheckoutStatus)
 			}
 
 			pkgstatus.Statuses.SubscriptionStatus = newUnitStatus
+			pkgstatus.Statuses.CheckoutStatus = *newCheckoutStatus
 			if err := sync.LocalClient.Update(context.TODO(), pkgstatus); err != nil {
 				klog.Errorf("Error in updating on managed cluster, appsubstatus:%v/%v, err:%v", pkgstatus.Namespace, pkgstatusName, err)
 				return err
@@ -285,7 +310,7 @@ func (sync *KubeSynchronizer) SyncAppsubClusterStatus(appsub *appv1.Subscription
 		}
 
 		if appsub != nil {
-			sync.recordAppSubStatusEvents(appsub, "Delete", newUnitStatus)
+			sync.recordAppSubStatusEvents(appsub, "Delete", newUnitStatus, nil)
 		}
 
 		if len(failedUnitStatuses) == 0 {
@@ -341,7 +366,7 @@ func (sync *KubeSynchronizer) SyncAppsubClusterStatus(appsub *appv1.Subscription
 }
 
 func (sync *KubeSynchronizer) recordAppSubStatusEvents(appsub *appv1.Subscription, action string,
-	pkgStatuses []v1alpha1.SubscriptionUnitStatus) {
+	pkgStatuses []v1alpha1.SubscriptionUnitStatus, checkoutStatus *v1alpha1.CheckoutStatus) {
 	curUser := ""
 
 	if encodedUser, ok := appsub.GetAnnotations()[appv1.AnnotationUserIdentity]; ok {
@@ -349,6 +374,11 @@ func (sync *KubeSynchronizer) recordAppSubStatusEvents(appsub *appv1.Subscriptio
 	}
 
 	packageStatuses := fmt.Sprintf("AppSub: '%s/%s'; User: '%s'; Action: '%s'; ", appsub.Namespace, appsub.Name, curUser, action)
+	if checkoutStatus != nil {
+		packageStatuses += fmt.Sprintf("CheckoutStatus: 'Count|LatencyLast|LatencyMin|LatencyMax,%d|%d|%d|%d",
+			checkoutStatus.Count, checkoutStatus.LatencyLast, checkoutStatus.LatencyMin, checkoutStatus.LatencyMax)
+	}
+
 	packageStatuses += "PackageStatus: 'Name|Namespace|Apiversion|Kind|Phase|Message|LastUpdateTime"
 
 	for _, resource := range pkgStatuses {
@@ -362,7 +392,8 @@ func (sync *KubeSynchronizer) recordAppSubStatusEvents(appsub *appv1.Subscriptio
 }
 
 func buildAppSubStatus(statusName, statusNs, appsubName, appsubNs, cluster string,
-	unitStatuses []v1alpha1.SubscriptionUnitStatus) *v1alpha1.SubscriptionStatus {
+	unitStatuses []v1alpha1.SubscriptionUnitStatus,
+	checkoutStatus *v1alpha1.CheckoutStatus) *v1alpha1.SubscriptionStatus {
 	pkgstatus := &v1alpha1.SubscriptionStatus{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       "SubscriptionStatus",
@@ -379,6 +410,9 @@ func buildAppSubStatus(statusName, statusNs, appsubName, appsubNs, cluster strin
 	pkgstatus.Labels = labels
 
 	pkgstatus.Statuses.SubscriptionStatus = unitStatuses
+	if checkoutStatus != nil {
+		pkgstatus.Statuses.CheckoutStatus = *checkoutStatus
+	}
 
 	return pkgstatus
 }

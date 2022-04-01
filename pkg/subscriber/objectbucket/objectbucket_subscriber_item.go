@@ -392,7 +392,8 @@ func (obsi *SubscriberItem) doSubscription() {
 
 	allowedGroupResources, deniedGroupResources := utils.GetAllowDenyLists(*obsi.Subscription)
 
-	if err := obsi.synchronizer.ProcessSubResources(obsi.Subscription, resources, allowedGroupResources, deniedGroupResources, false); err != nil {
+	if err := obsi.synchronizer.ProcessSubResources(obsi.Subscription, resources, allowedGroupResources,
+		deniedGroupResources, false, utils.CheckoutSummary{}); err != nil {
 		klog.Error(err)
 
 		obsi.successful = false

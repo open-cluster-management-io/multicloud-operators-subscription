@@ -89,8 +89,8 @@ var _ = BeforeSuite(func() {
 	err = deployable.AddToScheme(k8sManager.GetScheme())
 	Expect(err).NotTo(HaveOccurred())
 
-	cloneFunc := func(*utils.GitCloneOption) (string, error) {
-		return defaultCommit, nil
+	cloneFunc := func(*utils.GitCloneOption) (string, utils.CheckoutSummary, error) {
+		return defaultCommit, utils.CheckoutSummary{}, nil
 	}
 
 	localRepoDidr := func(*subv1.Subscription) string {

@@ -28,6 +28,7 @@ import (
 	appv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
 	appSubStatusV1alpha1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1alpha1"
 	v1alpha1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1alpha1"
+	"open-cluster-management.io/multicloud-operators-subscription/pkg/utils"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -62,6 +63,20 @@ var (
 		Phase:      string(appSubStatusV1alpha1.PackageDeployFailed),
 		Message:    "Success",
 	}
+
+	appSubCheckoutSummary1 = utils.CheckoutSummary{
+		SuccessfulCount:     2,
+		FailedCount:         0,
+		SuccessfulLatencyMS: 3556,
+		FailedLatencyMS:     0,
+	}
+
+	appSubCheckoutSummary2 = utils.CheckoutSummary{
+		SuccessfulCount:     1,
+		FailedCount:         1,
+		SuccessfulLatencyMS: 1475,
+		FailedLatencyMS:     1336,
+	}
 )
 
 var _ = Describe("test create/update/delete appsub status for standalone and managed cluster", func() {
@@ -80,6 +95,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 			AppSub:                    hostSub1,
 			Action:                    "APPLY",
 			SubscriptionPackageStatus: appSubUnitStatuses,
+			CheckoutSummary:           appSubCheckoutSummary1,
 		}
 
 		s := &KubeSynchronizer{
@@ -116,6 +132,11 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 		Expect(len(pkgstatuses.Items)).To(gomega.Equal(1))
 		Expect(pkgstatuses.Items[0].Name).To(gomega.Equal(pkgstatusName))
 		Expect(len(pkgstatuses.Items[0].Statuses.SubscriptionStatus)).To(gomega.Equal(1))
+		// checkout status
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.Count).To(gomega.Equal(2))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.LatencyLast).To(gomega.Equal(3556))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.LatencyMin).To(gomega.Equal(3556))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.LatencyMax).To(gomega.Equal(3556))
 
 		// No cluster appsub report is created
 		appsubReport := &appSubStatusV1alpha1.SubscriptionReport{}
@@ -131,6 +152,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 			AppSub:                    hostSub1,
 			Action:                    "APPLY",
 			SubscriptionPackageStatus: appSubUnitStatuses,
+			CheckoutSummary:           appSubCheckoutSummary2,
 		}
 		err = s.SyncAppsubClusterStatus(nil, updateAppsubClusterStatus, nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -143,6 +165,11 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 
 		Expect(pkgstatuses.Items[0].Name).To(gomega.Equal(pkgstatusName))
 		Expect(len(pkgstatuses.Items[0].Statuses.SubscriptionStatus)).To(gomega.Equal(2))
+		// checkout status
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.Count).To(gomega.Equal(4))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.LatencyLast).To(gomega.Equal(2811)) // 1475 + 1336
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.LatencyMin).To(gomega.Equal(2811))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.LatencyMax).To(gomega.Equal(3556))
 
 		// Delete
 		rmAppsubClusterStatus := SubscriptionClusterStatus{
@@ -208,6 +235,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(pkgstatuses.Items)).To(gomega.Equal(1))
 		Expect(pkgstatuses.Items[0].Name).To(gomega.Equal(pkgstatusName))
+		Expect(pkgstatuses.Items[0].Statuses.CheckoutStatus.Count).To(gomega.Equal(0))
 
 		// Cluster appsub report is created with a deployed result
 		cAppsubReport := &appSubStatusV1alpha1.SubscriptionReport{}

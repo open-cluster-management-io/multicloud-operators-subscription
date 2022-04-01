@@ -259,7 +259,7 @@ func (ghsi *SubscriberItem) doSubscription() error {
 	}
 
 	//Clone the git repo
-	commitID, err := ghsi.cloneGitRepo()
+	commitID, checkoutSummary, err := ghsi.cloneGitRepo()
 	if err != nil {
 		klog.Error(err, "Unable to clone the git repo ", ghsi.Channel.Spec.Pathname)
 		ghsi.successful = false
@@ -385,7 +385,7 @@ func (ghsi *SubscriberItem) doSubscription() error {
 	allowedGroupResources, deniedGroupResources := utils.GetAllowDenyLists(*ghsi.Subscription)
 
 	if err := ghsi.synchronizer.ProcessSubResources(ghsi.Subscription, ghsi.resources,
-		allowedGroupResources, deniedGroupResources, ghsi.clusterAdmin); err != nil {
+		allowedGroupResources, deniedGroupResources, ghsi.clusterAdmin, checkoutSummary); err != nil {
 		klog.Error(err)
 
 		ghsi.successful = false
@@ -720,7 +720,7 @@ func (ghsi *SubscriberItem) subscribeHelmCharts(indexFile *repo.IndexFile) (err 
 	return err
 }
 
-func (ghsi *SubscriberItem) cloneGitRepo() (commitID string, err error) {
+func (ghsi *SubscriberItem) cloneGitRepo() (commitID string, checkoutSummary utils.CheckoutSummary, err error) {
 	annotations := ghsi.Subscription.GetAnnotations()
 
 	cloneDepth := 1
@@ -749,7 +749,7 @@ func (ghsi *SubscriberItem) cloneGitRepo() (commitID string, err error) {
 	primaryChannelConnectionConfig, err := getChannelConnectionConfig(ghsi.ChannelSecret, ghsi.ChannelConfigMap)
 
 	if err != nil {
-		return "", err
+		return "", checkoutSummary, err
 	}
 
 	primaryChannelConnectionConfig.RepoURL = ghsi.Channel.Spec.Pathname
@@ -762,7 +762,7 @@ func (ghsi *SubscriberItem) cloneGitRepo() (commitID string, err error) {
 		secondaryChannelConnectionConfig, err := getChannelConnectionConfig(ghsi.SecondaryChannelSecret, ghsi.SecondaryChannelConfigMap)
 
 		if err != nil {
-			return "", err
+			return "", checkoutSummary, err
 		}
 
 		secondaryChannelConnectionConfig.RepoURL = ghsi.SecondaryChannel.Spec.Pathname

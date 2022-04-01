@@ -43,6 +43,7 @@ type SubscriptionStatusList struct {
 // SubscriptionClusterStatusMap defines the status of packages in a cluster.
 type SubscriptionClusterStatusMap struct {
 	SubscriptionStatus []SubscriptionUnitStatus `json:"packages,omitempty"`
+	CheckoutStatus     CheckoutStatus           `json:"checkout,omitempty"`
 }
 
 // SubscriptionUnitStatus defines status of a package deployment.
@@ -54,6 +55,14 @@ type SubscriptionUnitStatus struct {
 	Phase          PackagePhase `json:"phase,omitempty"`
 	Message        string       `json:"message,omitempty"`
 	LastUpdateTime metav1.Time  `json:"lastUpdateTime"`
+}
+
+// CheckoutStatus defines the stauts of the checkout process.
+type CheckoutStatus struct {
+	Count       int `json:"count"`
+	LatencyLast int `json:"latencyLast"`
+	LatencyMin  int `json:"latencyMin"`
+	LatencyMax  int `json:"latencyMax"`
 }
 
 // PackagePhase defines the phasing of a Package
