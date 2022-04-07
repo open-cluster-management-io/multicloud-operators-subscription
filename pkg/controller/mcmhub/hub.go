@@ -307,8 +307,6 @@ func (r *ReconcileSubscription) createAppAppsubReport(sub *appv1alpha1.Subscript
 		pkgGroup, pkgVersion := utils.ParseAPIVersion(resource.APIVersion)
 
 		if pkgGroup == "" && pkgVersion == "" {
-			resource.Namespace = ""
-
 			klog.Infof("invalid apiversion: %v", resource)
 		} else {
 			isNamespaced := r.IsNamespacedResource(pkgGroup, pkgVersion, resource.Kind)
