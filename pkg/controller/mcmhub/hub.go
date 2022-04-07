@@ -282,10 +282,10 @@ func (r *ReconcileSubscription) IsNamespacedResource(group, version, kind string
 
 	mapping, err := r.restMapper.RESTMapping(pkgGK, version)
 	if err != nil {
-		klog.Errorf("Failed to get GVR from restmapping: group: %v, version: %v, kind: %v, err:%v",
+		klog.Errorf("Failed to get GVR from restmapping, keep the original namespace: group: %v, version: %v, kind: %v, err:%v",
 			group, version, kind, err)
 
-		return false
+		return true
 	}
 
 	var isNamespaced bool = true
