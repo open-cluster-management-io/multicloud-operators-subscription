@@ -83,6 +83,7 @@ type SubscriberItem struct {
 	currentNamespaceScoped bool
 	userID                 string
 	userGroup              string
+	metricStore            utils.SubscriberMetricStore
 }
 
 type kubeResource struct {
@@ -117,6 +118,9 @@ func (ghsi *SubscriberItem) Start(restart bool) {
 
 		return
 	}
+
+	// Create initial metric store
+	ghsi.metricStore = utils.NewSubscriberMetricStore()
 
 	go wait.Until(func() {
 		tw := ghsi.SubscriberItem.Subscription.Spec.TimeWindow
@@ -262,6 +266,14 @@ func (ghsi *SubscriberItem) doSubscription() (err error) {
 
 		return err
 	}
+
+	// Update the checkout metrics with the checkout summary
+	utils.UpdateCheckoutMetrics(
+		utils.MetricSubscriberType_Git,
+		ghsi.SubscriberItem.Subscription.Namespace,
+		ghsi.SubscriberItem.Subscription.Name,
+		checkoutSummary,
+		ghsi.metricStore)
 
 	klog.Info("Git commit: ", commitID)
 
