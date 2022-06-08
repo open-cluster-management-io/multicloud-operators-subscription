@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"testing"
@@ -30,6 +31,7 @@ import (
 
 func TestE2E(t *testing.T) {
 	gomega.RegisterFailHandler(ginkgo.Fail)
+	log.Println("BEFORE RUNNING")
 	ginkgo.RunSpecs(t, "E2E suite")
 }
 
@@ -46,8 +48,10 @@ var (
 // - MANAGED_CLUSTER_NAME sets the name of the cluster
 // - KUBECONFIG is the location of the kubeconfig file to use
 var _ = ginkgo.BeforeSuite(func() {
+	log.Println("BEFORE SUITE")
 	kubeconfig := os.Getenv("KUBECONFIG")
 	managedClusterName = os.Getenv("MANAGED_CLUSTER_NAME")
+	log.Println(kubeconfig, managedClusterName)
 	if managedClusterName == "" {
 		managedClusterName = "cluster1"
 	}
@@ -203,4 +207,5 @@ var _ = ginkgo.BeforeSuite(func() {
 		return true, nil
 	})
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
+	log.Println("FINISHED BEFORE SUITE")
 })
