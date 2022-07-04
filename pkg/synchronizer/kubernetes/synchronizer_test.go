@@ -239,14 +239,6 @@ var _ = Describe("test PurgeAllSubscribedResources", func() {
 		}
 	})
 
-	It("should not find appSubStatus", func() {
-		appsub := workload5Subscription.DeepCopy()
-		// Not actually creating subscription
-
-		err = sync.PurgeAllSubscribedResources(appsub)
-		Expect(err).NotTo(HaveOccurred())
-	})
-
 	It("should purge everything", func() {
 		appsub := workload5Subscription.DeepCopy()
 		// Actually creating the subscription
