@@ -239,18 +239,22 @@ var _ = Describe("test PurgeAllSubscribedResources", func() {
 		}
 	})
 
+	It("should not find appSubStatus", func() {
+		appsub := workload5Subscription.DeepCopy()
+		// Not actually creating subscription
+
+		defer k8sClient.Delete(context.TODO(), appsub)
+
+		err = sync.PurgeAllSubscribedResources(appsub)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	It("should purge everything", func() {
 		appsub := workload5Subscription.DeepCopy()
 		// Actually creating the subscription
 		Expect(k8sClient.Create(context.TODO(), appsub)).NotTo(HaveOccurred())
 
 		defer k8sClient.Delete(context.TODO(), appsub)
-
-		subAnnotations := make(map[string]string)
-		subAnnotations[appv1alpha1.AnnotationClusterAdmin] = "true"
-		subAnnotations[appv1alpha1.AnnotationResourceReconcileOption] = "merge"
-		subAnnotations[appv1alpha1.AnnotationGitBranch] = "main"
-		appsub.SetAnnotations(subAnnotations)
 
 		err = sync.PurgeAllSubscribedResources(appsub)
 		Expect(err).NotTo(HaveOccurred())
