@@ -179,7 +179,7 @@ func (ghsi *SubscriberItem) doSubscriptionWithRetries(retryInterval time.Duratio
 	}
 }
 
-func (ghsi *SubscriberItem) doSubscription() (err error) {
+func (ghsi *SubscriberItem) doSubscription() error {
 	hostkey := types.NamespacedName{Name: ghsi.Subscription.Name, Namespace: ghsi.Subscription.Namespace}
 	klog.Info("enter doSubscription: ", hostkey.String())
 
@@ -393,7 +393,7 @@ func (ghsi *SubscriberItem) doSubscription() (err error) {
 	allowedGroupResources, deniedGroupResources := utils.GetAllowDenyLists(*ghsi.Subscription)
 
 	if err := ghsi.synchronizer.ProcessSubResources(ghsi.Subscription, ghsi.resources,
-		allowedGroupResources, deniedGroupResources, ghsi.clusterAdmin, checkoutSummary); err != nil {
+		allowedGroupResources, deniedGroupResources, ghsi.clusterAdmin); err != nil {
 		klog.Error(err)
 
 		ghsi.successful = false

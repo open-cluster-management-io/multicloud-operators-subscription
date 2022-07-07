@@ -35,6 +35,7 @@ type MetricServiceListener struct{}
 func (listener *MetricServiceListener) Start(context.Context) error {
 	http.HandleFunc("/metrics", promhttp.Handler().ServeHTTP)
 	klog.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", metricServicePort), nil))
+
 	return nil
 }
 
@@ -43,5 +44,6 @@ func Add(mgr manager.Manager) error {
 	if err := mgr.Add(&MetricServiceListener{}); err != nil {
 		return err
 	}
+
 	return nil
 }
