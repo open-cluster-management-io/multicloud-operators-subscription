@@ -19,6 +19,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+// Collector for a checkout process
+type CheckoutSummary struct {
+	SuccessfulCount     int
+	FailedCount         int
+	SuccessfulLatencyMS int
+	FailedLatencyMS     int
+}
+
+// Subscriber type enum
 type MetricSubscriberType int
 
 //nolint // underscores in var names are required for readability
@@ -27,27 +36,7 @@ const (
 	MetricSubscriberType_Git          MetricSubscriberType = 0
 	MetricSubscriberType_HelmRepo     MetricSubscriberType = 1
 	MetricSubscriberType_ObjectBucket MetricSubscriberType = 2
-	// Checkout metrics info
-	metricInfo_SuccessfulCheckoutCount_Name   = "subscriber_successful_checkout_count"
-	metricInfo_SuccessfulCheckoutCount_Help   = "Counter for successful checkout process count"
-	metricInfo_SuccessfulCheckoutLatency_Name = "subscriber_successful_checkout_latency"
-	metricInfo_SuccessfulCheckoutLatency_Help = "Histogram of successful checkout process latency"
-	metricInfo_FailedCheckoutCount_Name       = "subscriber_failed_checkout_count"
-	metricInfo_FailedCheckoutCount_Help       = "Counter for failed checkout process count"
-	metricInfo_FailedCheckoutLatency_Name     = "subscriber_failed_checkout_latency"
-	metricInfo_FailedCheckoutLatency_Help     = "Histogram of failed checkout process latency"
 )
-
-// Vector labels
-var metricLabelsSubscriber = []string{"sub_type", "sub_namespace", "sub_name"}
-
-// Metrics store
-type SubscriberMetricStore struct {
-	SuccessfulCheckoutCount   *prometheus.CounterVec
-	SuccessfulCheckoutLatency *prometheus.HistogramVec
-	FailedCheckoutCount       *prometheus.CounterVec
-	FailedCheckoutLatency     *prometheus.HistogramVec
-}
 
 // Return the string value of the various subscribers
 func (subscriberType MetricSubscriberType) ToString() string {
@@ -63,68 +52,52 @@ func (subscriberType MetricSubscriberType) ToString() string {
 	}
 }
 
-// Get a new instance of the metrics store
-func NewSubscriberMetricStore() SubscriberMetricStore {
-	return SubscriberMetricStore{
-		SuccessfulCheckoutCount:   newSuccessfulCheckoutCountCounter(),
-		SuccessfulCheckoutLatency: newSuccessfulCheckoutLatencyHistogram(),
-		FailedCheckoutCount:       newFailedCheckoutCountCounter(),
-		FailedCheckoutLatency:     newFailedCheckoutLatencyHistogram(),
-	}
-}
+var subscriberVectorLabels = []string{"subscriber_type", "subscriber_namespace", "subscriber_name"}
 
-// Create a new counter for incrementing checkout successful count
-func newSuccessfulCheckoutCountCounter() *prometheus.CounterVec {
-	return promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: metricInfo_SuccessfulCheckoutCount_Name,
-		Help: metricInfo_SuccessfulCheckoutCount_Help,
-	}, metricLabelsSubscriber)
-}
+// #################
+// #### Metrics ####
+// #################
+var SuccessfulCheckoutCount = *promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "subscriber_successful_checkout_count",
+	Help: "Counter for successful checkout process count",
+}, subscriberVectorLabels)
 
-// Create a new histogram for aggregating checkout successful latency
-func newSuccessfulCheckoutLatencyHistogram() *prometheus.HistogramVec {
-	return promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: metricInfo_SuccessfulCheckoutLatency_Name,
-		Help: metricInfo_SuccessfulCheckoutLatency_Help,
-	}, metricLabelsSubscriber)
-}
+var SuccessfulCheckoutLatency = *promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name: "subscriber_successful_checkout_latency",
+	Help: "Histogram of successful checkout process latency",
+}, subscriberVectorLabels)
 
-// Create a new counter for incrementing checkout failed count
-func newFailedCheckoutCountCounter() *prometheus.CounterVec {
-	return promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: metricInfo_FailedCheckoutCount_Name,
-		Help: metricInfo_FailedCheckoutCount_Help,
-	}, metricLabelsSubscriber)
-}
+var FailedCheckoutCount = *promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "subscriber_failed_checkout_count",
+	Help: "Counter for failed checkout process count",
+}, subscriberVectorLabels)
 
-// Create a new histogram for aggregating checkout failed latency
-func newFailedCheckoutLatencyHistogram() *prometheus.HistogramVec {
-	return promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: metricInfo_FailedCheckoutLatency_Name,
-		Help: metricInfo_FailedCheckoutLatency_Help,
-	}, metricLabelsSubscriber)
-}
+var FailedCheckoutLatency = *promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name: "subscriber_failed_checkout_latency",
+	Help: "Histogram of failed checkout process latency",
+}, subscriberVectorLabels)
+
+// ###########################
+// #### Utility functions ####
+// ###########################
 
 // Update the checkout various checkout metrics
-func UpdateCheckoutMetrics(subType MetricSubscriberType, subNamespace string, subName string,
-	checkoutSummary CheckoutSummary, metricStore SubscriberMetricStore) {
-	if checkoutSummary.SuccessfulCount > 0 { // Checkout was successful
+func UpdateCheckoutMetrics(subType MetricSubscriberType, subNamespace string, subName string, checkoutSummary CheckoutSummary) {
+	if checkoutSummary.SuccessfulCount > 0 {
 		// Update the successful checkout count
-		metricStore.SuccessfulCheckoutCount.
-			WithLabelValues(subType.ToString(), subNamespace, subName).
+		SuccessfulCheckoutCount.WithLabelValues(subType.ToString(), subNamespace, subName).
 			Add(float64(checkoutSummary.SuccessfulCount))
 		// Update the successful checkout latency
-		metricStore.SuccessfulCheckoutLatency.
-			WithLabelValues(subType.ToString(), subNamespace, subName).
+		SuccessfulCheckoutLatency.WithLabelValues(subType.ToString(), subNamespace, subName).
 			Observe(float64(checkoutSummary.SuccessfulLatencyMS))
-	} else if checkoutSummary.FailedCount > 0 { // Checkout has failed
+	}
+
+	if checkoutSummary.FailedCount > 0 {
 		// Update the failed checkout count
-		metricStore.FailedCheckoutCount.
-			WithLabelValues(subType.ToString(), subNamespace, subName).
+		FailedCheckoutCount.WithLabelValues(subType.ToString(), subNamespace, subName).
 			Add(float64(checkoutSummary.FailedCount))
 		// Update the failed checkout latency
-		metricStore.FailedCheckoutLatency.
-			WithLabelValues(subType.ToString(), subNamespace, subName).
+		FailedCheckoutLatency.WithLabelValues(subType.ToString(), subNamespace, subName).
 			Observe(float64(checkoutSummary.FailedLatencyMS))
 	}
 }
