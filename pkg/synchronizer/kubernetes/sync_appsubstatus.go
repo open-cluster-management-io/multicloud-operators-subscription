@@ -28,6 +28,11 @@ import (
 	"open-cluster-management.io/multicloud-operators-subscription/pkg/utils"
 )
 
+const (
+	localSuffix  = "-local"
+	localCluster = "local-cluster"
+)
+
 /*
 
 use {apiversion, kind, namespace, name} as the key to build new appsubPackaggeStatus map and existing appsubPackaggeStatus map
@@ -55,34 +60,29 @@ Create the final appsubPackaggeStatus map for containing the final updated appsu
 */
 
 func (sync *KubeSynchronizer) SyncAppsubClusterStatus(appsub *appv1.Subscription,
-	appsubClusterStatus SubscriptionClusterStatus, skipOrphanDelete *bool) error {
+	appsubClusterStatus SubscriptionClusterStatus,
+	skipOrphanDelete *bool, skipUpdate *bool) error {
 	klog.Infof("cluster: %v, appsub: %v/%v, action: %v, hub:%v, standalone:%v\n", appsubClusterStatus.Cluster,
 		appsubClusterStatus.AppSub.Namespace, appsubClusterStatus.AppSub.Name, appsubClusterStatus.Action, sync.hub, sync.standalone)
-
-	// If the incoming new appstatus is only one HelmRelease kind resource, skip the appsubstatus sync-up.
-	// Later the helmrelease controller will update the actual resources to the appsubstatus
-	if len(appsubClusterStatus.SubscriptionPackageStatus) == 1 &&
-		appsubClusterStatus.SubscriptionPackageStatus[0].Kind == "HelmRelease" &&
-		appsubClusterStatus.SubscriptionPackageStatus[0].Phase != string(v1alpha1.PackageDeployFailed) {
-		klog.Infof("Don't upate the HelmRelease kind resource to appsub status. appsub: %v/%v",
-			appsubClusterStatus.AppSub.Namespace, appsubClusterStatus.AppSub.Name)
-
-		return nil
-	}
 
 	skipOrphanDel := false
 	if skipOrphanDelete != nil {
 		skipOrphanDel = *skipOrphanDelete
 	}
 
-	// Get existing appsubstatus on managed cluster, if it exists
-	isLocalCluster := sync.hub && !sync.standalone
+	skipUpd := false
+	if skipUpdate != nil {
+		skipUpd = *skipUpdate
+	}
 
+	// Get existing appsubstatus on managed cluster, if it exists
 	appsubName := appsubClusterStatus.AppSub.Name
 	pkgstatusNs := appsubClusterStatus.AppSub.Namespace
+	isLocalCluster := (sync.hub && !sync.standalone) ||
+		(appsubClusterStatus.Cluster == localCluster && strings.HasSuffix(appsubName, localSuffix))
 
 	if isLocalCluster || sync.standalone && skipOrphanDel {
-		if strings.HasSuffix(appsubName, "-local") {
+		if strings.HasSuffix(appsubName, localSuffix) {
 			appsubName = appsubName[:len(appsubName)-6]
 		}
 	}
@@ -108,10 +108,32 @@ func (sync *KubeSynchronizer) SyncAppsubClusterStatus(appsub *appv1.Subscription
 		}
 	}
 
+	// If the incoming new appstatus is only one HelmRelease kind resource, skip the appsubstatus sync-up.
+	// Later the helmrelease controller will update the actual resources to the appsubstatus
+	if shouldSkip(appsubClusterStatus, foundPkgStatus, *pkgstatus) {
+		return nil
+	}
+
+	if foundPkgStatus && skipUpd {
+		klog.Infof("Skip update appsubstatus(%v/%v) due to skipUpdate flag but update AppsubReport",
+			pkgstatus.Namespace, pkgstatus.Name)
+
+		// Update result in cluster AppsubReport
+		if err := updateAppsubReportResult(sync.RemoteClient, appsubClusterStatus.AppSub.Namespace,
+			appsubName, appsubClusterStatus.Cluster, false,
+			sync.standalone, isLocalCluster); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	if appsubClusterStatus.Action == "APPLY" {
 		// Skip helmrelease on local-cluster
 		if isLocalCluster && len(appsubClusterStatus.SubscriptionPackageStatus) == 1 &&
-			appsubClusterStatus.SubscriptionPackageStatus[0].Kind == "HelmRelease" {
+			strings.EqualFold(appsubClusterStatus.SubscriptionPackageStatus[0].Kind, "HelmRelease") &&
+			strings.EqualFold(appsubClusterStatus.SubscriptionPackageStatus[0].APIVersion, "apps.open-cluster-management.io/v1") &&
+			appsubClusterStatus.SubscriptionPackageStatus[0].Phase != string(v1alpha1.PackageDeployFailed) {
 			klog.V(1).Infof("Skip create appsubstatus(%v/%v) for HelmRelease", pkgstatus.Namespace, pkgstatus.Name)
 
 			// Create cluster report so the helm release controller on the standalone could update it
@@ -271,7 +293,8 @@ func (sync *KubeSynchronizer) SyncAppsubClusterStatus(appsub *appv1.Subscription
 
 		// Update result in cluster AppsubReport
 		if err := updateAppsubReportResult(sync.RemoteClient, appsubClusterStatus.AppSub.Namespace,
-			appsubName, appsubClusterStatus.Cluster, deployFailed, sync.standalone); err != nil {
+			appsubName, appsubClusterStatus.Cluster, deployFailed,
+			sync.standalone, isLocalCluster); err != nil {
 			return err
 		}
 	}
@@ -355,7 +378,8 @@ func (sync *KubeSynchronizer) SyncAppsubClusterStatus(appsub *appv1.Subscription
 
 				// Update result in cluster AppsubReport
 				if err := updateAppsubReportResult(sync.RemoteClient, appsubClusterStatus.AppSub.Namespace,
-					appsubName, appsubClusterStatus.Cluster, deployFailed, sync.standalone); err != nil {
+					appsubName, appsubClusterStatus.Cluster, deployFailed,
+					sync.standalone, isLocalCluster); err != nil {
 					return err
 				}
 			}
@@ -417,8 +441,8 @@ func buildAppSubStatus(statusName, statusNs, appsubName, appsubNs, cluster strin
 	return pkgstatus
 }
 
-func updateAppsubReportResult(rClient client.Client, appsubNs, appsubName, clusterAppsubReportNs string,
-	deployFailed, standalone bool) error {
+func updateAppsubReportResult(rClient client.Client, appsubNs, appsubName,
+	clusterAppsubReportNs string, deployFailed, standalone, isLocalCluster bool) error {
 	// For managed clusters, get cluster AppsubReport
 	var appsubReport *v1alpha1.SubscriptionReport
 
@@ -428,6 +452,10 @@ func updateAppsubReportResult(rClient client.Client, appsubNs, appsubName, clust
 		// Check if a hosting-subscription exists
 		appsub := &v1.Subscription{}
 
+		if isLocalCluster && !strings.HasSuffix(appsubName, localSuffix) {
+			appsubName += localSuffix
+		}
+
 		if err := rClient.Get(context.TODO(),
 			client.ObjectKey{Name: appsubName, Namespace: appsubNs}, appsub); err != nil {
 			klog.Errorf("failed to appsub to check host-subscription for deployment from standalone controller, err: %v", err)
@@ -436,15 +464,15 @@ func updateAppsubReportResult(rClient client.Client, appsubNs, appsubName, clust
 
 		annotations := appsub.GetAnnotations()
 		if annotations == nil || annotations["apps.open-cluster-management.io/hosting-subscription"] == "" {
-			klog.V(1).Infof("Standalone appsub, skip create/update of entry in cluter report")
+			klog.Infof("Standalone appsub, skip create/update of entry in cluter report")
 			return nil
 		}
 
-		if strings.HasSuffix(appsubName, "-local") {
+		if strings.HasSuffix(appsubName, localSuffix) {
 			appsubName = appsubName[:len(appsubName)-6]
 		}
 
-		clusterAppsubReportNs = "local-cluster"
+		clusterAppsubReportNs = localCluster
 
 		klog.V(1).Infof("Standalone appsub for helm, continue")
 	}
@@ -519,11 +547,11 @@ func deleteAppsubReportResult(rClient client.Client, appsubNs, appsubName, clust
 
 		annotations := appsub.GetAnnotations()
 		if annotations == nil || annotations["apps.open-cluster-management.io/hosting-subscription"] == "" {
-			klog.V(1).Infof("Standalone appsub, skip delete entry from cluster report")
+			klog.Infof("Standalone appsub, skip delete entry from cluster report")
 			return nil
 		}
 
-		clusterAppsubReportNs = "local-cluster"
+		clusterAppsubReportNs = localCluster
 
 		klog.V(1).Infof("Standalone appsub for helm, continue")
 	}
@@ -611,4 +639,25 @@ func getClusterAppsubReport(rClient client.Client, clusterAppsubReportNs string,
 	}
 
 	return appsubReport, nil
+}
+
+func shouldSkip(appsubClusterStatus SubscriptionClusterStatus, foundPkgStatus bool,
+	pkgstatus v1alpha1.SubscriptionStatus) bool {
+	if len(appsubClusterStatus.SubscriptionPackageStatus) == 1 &&
+		strings.EqualFold(appsubClusterStatus.SubscriptionPackageStatus[0].Kind, "HelmRelease") &&
+		strings.EqualFold(appsubClusterStatus.SubscriptionPackageStatus[0].APIVersion, "apps.open-cluster-management.io/v1") &&
+		appsubClusterStatus.SubscriptionPackageStatus[0].Phase != string(v1alpha1.PackageDeployFailed) {
+		if foundPkgStatus &&
+			appsubClusterStatus.SubscriptionPackageStatus[0].Name != pkgstatus.Statuses.SubscriptionStatus[0].Name {
+			klog.Infof("Update the HelmRelease kind resource to appsub status because HelmRelease changed. appsub: %v/%v",
+				appsubClusterStatus.AppSub.Namespace, appsubClusterStatus.AppSub.Name)
+		} else {
+			klog.Infof("Don't update the HelmRelease kind resource to appsub status. appsub: %v/%v",
+				appsubClusterStatus.AppSub.Namespace, appsubClusterStatus.AppSub.Name)
+
+			return true
+		}
+	}
+
+	return false
 }

@@ -182,7 +182,22 @@ func getConnectionOptions(cloneOptions *GitCloneOption, primary bool) (connectio
 
 	options := &git.CloneOptions{
 		URL:               channelConnOptions.RepoURL,
+		SingleBranch:      true,
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+		ReferenceName:     cloneOptions.Branch,
+	}
+
+	// The destination directory needs to be created here
+	err = os.RemoveAll(cloneOptions.DestDir)
+
+	if err != nil {
+		klog.Warning(err, "Failed to remove directory ", cloneOptions.DestDir)
+	}
+
+	err = os.MkdirAll(cloneOptions.DestDir, os.ModePerm)
+
+	if err != nil {
+		return nil, err
 	}
 
 	// If branch name is provided, clone the specified branch only.
@@ -236,18 +251,6 @@ func getConnectionOptions(cloneOptions *GitCloneOption, primary bool) (connectio
 			klog.Info("Setting clone depth to 20")
 			options.Depth = 20
 		}
-	}
-
-	err = os.RemoveAll(cloneOptions.DestDir)
-
-	if err != nil {
-		klog.Warning(err, "Failed to remove directory ", cloneOptions.DestDir)
-	}
-
-	err = os.MkdirAll(cloneOptions.DestDir, os.ModePerm)
-
-	if err != nil {
-		return nil, err
 	}
 
 	return options, nil
@@ -622,33 +625,6 @@ func GetSubscriptionBranchRef(b string) plumbing.ReferenceName {
 	}
 
 	return ""
-}
-
-func GetChannelConnectionConfig(secret *corev1.Secret, configmap *corev1.ConfigMap) (connCfg *ChannelConnectionCfg, err error) {
-	connCfg = &ChannelConnectionCfg{}
-
-	if secret != nil {
-		user, token, sshKey, passphrase, clientkey, clientcert, err := ParseChannelSecret(secret)
-
-		if err != nil {
-			return nil, err
-		}
-
-		connCfg.User = user
-		connCfg.Password = token
-		connCfg.SSHKey = sshKey
-		connCfg.Passphrase = passphrase
-		connCfg.ClientCert = clientcert
-		connCfg.ClientKey = clientkey
-	}
-
-	if configmap != nil {
-		caCert := configmap.Data[appv1.ChannelCertificateData]
-
-		connCfg.CaCerts = caCert
-	}
-
-	return connCfg, nil
 }
 
 // GetChannelSecret returns username and password for channel

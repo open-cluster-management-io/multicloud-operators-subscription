@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,7 +59,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Enable the concurrent reconcile in case some placementrule could take longer to generate cluster decisions
 	c, err := controller.New("placementrule-controller", mgr, controller.Options{
 		Reconciler:              r,
-		MaxConcurrentReconciles: 10,
+		MaxConcurrentReconciles: 2,
 	})
 	if err != nil {
 		return err
@@ -122,7 +123,12 @@ func (mapper *ClusterPlacementRuleMapper) Map(obj client.Object) []reconcile.Req
 		requests = append(requests, reconcile.Request{NamespacedName: objkey})
 	}
 
-	klog.Infof("Those placementRules are triggered due to managed Cluster status change: %v", requests)
+	requestNum := len(requests)
+	if requestNum > 20 {
+		requestNum = 20
+	}
+
+	klog.Infof("Those placementRules triggered due to managed Cluster status change. placementRules: %v", requests[:requestNum])
 
 	return requests
 }
@@ -219,22 +225,22 @@ func (r *ReconcilePlacementRule) Reconcile(ctx context.Context, request reconcil
 	// reconcile finished check if need to upadte the resource
 	if updated {
 		klog.Info("Update placementrule ", instance.Name, " with decisions: ", instance.Status.Decisions)
-		err = r.Status().Update(context.TODO(), instance)
 
-		klog.V(1).Info("Status update", request.NamespacedName, " with err:", err)
+		err = r.UpdateStatus(instance)
+		if err != nil {
+			klog.Error("Status update -.", request.NamespacedName, " with err:", err)
+
+			return reconcile.Result{}, err
+		}
 	}
 
-	klog.V(1).Info("Reconciling - finished.", request.NamespacedName)
+	klog.Info("Reconciling - finished.", request.NamespacedName)
 
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcilePlacementRule) UpdateStatus(request reconcile.Request, instance *appv1alpha1.PlacementRule) error {
-	err := r.Status().Update(context.TODO(), instance)
-
-	if err != nil {
-		klog.Error("Error returned when updating placementrule decisions:", err, " ,instance:", instance)
-	}
-
-	return err
+func (r *ReconcilePlacementRule) UpdateStatus(instance *appv1alpha1.PlacementRule) error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		return r.Status().Update(context.TODO(), instance)
+	})
 }

@@ -11,3 +11,11 @@ spec:
       name: nginx-pr
   packageFilter:
     version: "1.36.3"
+  packageOverrides:
+  - packageName: nginx-ingress
+    packageAlias: nginx-ingress-simple
+    packageOverrides:
+    - path: spec
+      value:
+        defaultBackend:
+          replicaCount: 3

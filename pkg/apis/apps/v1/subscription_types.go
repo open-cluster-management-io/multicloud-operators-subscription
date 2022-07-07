@@ -72,7 +72,8 @@ var (
 	// AnnotationUserIdentity is subscription user id
 	AnnotationUserIdentity = "open-cluster-management.io/user-identity"
 	// AnnotationResourceReconcileOption is for reconciling existing resource
-	AnnotationResourceReconcileOption = SchemeGroupVersion.Group + "/reconcile-option"
+	AnnotationResourceReconcileOption   = SchemeGroupVersion.Group + "/reconcile-option"
+	AnnotationResourceDoNotDeleteOption = SchemeGroupVersion.Group + "/do-not-delete"
 	// AnnotationResourceReconcileLevel is for resource reconciliation frequency
 	AnnotationResourceReconcileLevel = SchemeGroupVersion.Group + "/reconcile-rate"
 	// AnnotationManualReconcileTime is the time user triggers a manual resource reconcile
@@ -89,6 +90,8 @@ var (
 	AnnotationManagedCluster = SchemeGroupVersion.Group + "/managed-cluster"
 	// AnnotationHostingDeployable sits in templated resource, gives name of hosting deployable, legacy annotation
 	AnnotationHostingDeployable = SchemeGroupVersion.Group + "/hosting-deployable"
+	// AnnotationCurrentNamespaceScoped specifies to deloy resources into subscription namespace
+	AnnotationCurrentNamespaceScoped = SchemeGroupVersion.Group + "/current-namespace-scoped"
 )
 
 const (
@@ -193,6 +196,8 @@ type SubscriptionSpec struct {
 	HookSecretRef *corev1.ObjectReference `json:"hooksecretref,omitempty"`
 	Allow         []*AllowDenyItem        `json:"allow,omitempty"`
 	Deny          []*AllowDenyItem        `json:"deny,omitempty"`
+	// WatchHelmNamespaceScopedResources is used to enable watching namespace scope Helm chart resources
+	WatchHelmNamespaceScopedResources bool `json:"watchHelmNamespaceScopedResources,omitempty"`
 }
 
 // SubscriptionPhase defines the phasing of a Subscription
@@ -285,6 +290,7 @@ type SubscriptionStatus struct {
 // +kubebuilder:printcolumn:name="SubscriptionState",type="string",JSONPath=".status.phase",description="subscription state"
 // +kubebuilder:printcolumn:name="AppstatusReference",type="string",JSONPath=".status.appstatusReference",description="subscription status reference"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="Updated",type="date",JSONPath=".status.lastUpdateTime"
 // +kubebuilder:printcolumn:name="Local placement",type="boolean",JSONPath=".spec.placement.local"
 // +kubebuilder:printcolumn:name="Time window",type="string",JSONPath=".spec.timewindow.windowtype"
 // +kubebuilder:resource:shortName=appsub

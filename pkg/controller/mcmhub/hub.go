@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
 
@@ -31,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -43,6 +41,7 @@ import (
 	appv1alpha1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
 	appsubreportv1alpha1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1alpha1"
 	helmops "open-cluster-management.io/multicloud-operators-subscription/pkg/subscriber/helmrepo"
+	"open-cluster-management.io/multicloud-operators-subscription/pkg/utils"
 	awsutils "open-cluster-management.io/multicloud-operators-subscription/pkg/utils/aws"
 )
 
@@ -274,8 +273,49 @@ func (r *ReconcileSubscription) GetChannelGeneration(s *appv1alpha1.Subscription
 	return strconv.FormatInt(chobj.Generation, 10), nil
 }
 
+func (r *ReconcileSubscription) IsNamespacedResource(group, version, kind string) bool {
+	pkgGK := schema.GroupKind{
+		Kind:  kind,
+		Group: group,
+	}
+
+	mapping, err := r.restMapper.RESTMapping(pkgGK, version)
+	if err != nil {
+		klog.Errorf("Failed to get GVR from restmapping, keep the original namespace: group: %v, version: %v, kind: %v, err:%v",
+			group, version, kind, err)
+
+		return true
+	}
+
+	var isNamespaced bool = true
+
+	if mapping.Scope.Name() != "namespace" {
+		isNamespaced = false
+	}
+
+	klog.Infof("group: %v, version: %v, kind: %v, scope: %#v, isNamespaced: %v",
+		group, version, kind, mapping.Scope, isNamespaced)
+
+	return isNamespaced
+}
+
 func (r *ReconcileSubscription) createAppAppsubReport(sub *appv1alpha1.Subscription, resources []*v1.ObjectReference,
 	propagationFailedCount, clusterCount int) error {
+	// remove resource.namespace if the resource is cluster scoped
+	for _, resource := range resources {
+		pkgGroup, pkgVersion := utils.ParseAPIVersion(resource.APIVersion)
+
+		if pkgGroup == "" && pkgVersion == "" {
+			klog.Infof("invalid apiversion: %v", resource)
+		} else {
+			isNamespaced := r.IsNamespacedResource(pkgGroup, pkgVersion, resource.Kind)
+
+			if !isNamespaced {
+				resource.Namespace = ""
+			}
+		}
+	}
+
 	appsubReport := &appsubreportv1alpha1.SubscriptionReport{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       "SubscriptionReport",
@@ -330,19 +370,16 @@ func (r *ReconcileSubscription) createAppAppsubReport(sub *appv1alpha1.Subscript
 			return err
 		}
 	} else {
-		klog.V(1).Infof("App appsubReport found: %v/%v, update it.", appsubReport.Namespace, appsubReport.Name)
+		klog.Infof("App appsubReport found: %v/%v, update it.", appsubReport.Namespace, appsubReport.Name)
 
 		if propagationFailedCount > 0 {
-			klog.V(1).Infof("Failed to get clusters from placement, exit without updating appsubReport")
+			klog.Infof("Failed to get clusters from placement, exit without updating appsubReport")
 
 			return nil
 		}
 
-		if resources != nil && (appsubReport.Resources == nil || !reflect.DeepEqual(appsubReport.Resources, resources)) {
-			appsubReport.Resources = resources
-		} else {
-			klog.V(1).Infof("App appsubReport(%v/%v) resource list unchanged.", appsubReport.Namespace, appsubReport.Name)
-		}
+		// Always apply the new resources list
+		appsubReport.Resources = resources
 
 		// update counts
 		deployed, err := strconv.Atoi(appsubReport.Summary.Deployed)
@@ -516,12 +553,6 @@ func (r *ReconcileSubscription) getObjectBucketResources(sub *appv1alpha1.Subscr
 		if err != nil {
 			klog.V(5).Infof("Error in unmarshall template, err:%v |template: %v", err, string(tplb.Content))
 			continue
-		}
-
-		errs := validation.IsDNS1123Subdomain(template.GetName())
-		if len(errs) > 0 {
-			errs = append([]string{fmt.Sprintf("Invalid %s name '%s'", template.GetKind(), template.GetName())}, errs...)
-			errMsgs = append(errMsgs, strings.Join(errs, ","))
 		}
 
 		resource := &v1.ObjectReference{

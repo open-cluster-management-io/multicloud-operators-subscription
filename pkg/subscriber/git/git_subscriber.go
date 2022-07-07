@@ -141,6 +141,13 @@ func (ghs *Subscriber) SubscribeItem(subitem *appv1alpha1.SubscriberItem) error 
 		ghssubitem.clusterAdmin = false
 	}
 
+	if strings.EqualFold(subAnnotations[appv1alpha1.AnnotationCurrentNamespaceScoped], "true") {
+		klog.Info("CurrentNamespaceScoped enabled on SubscriberItem ", ghssubitem.Subscription.Name)
+		ghssubitem.currentNamespaceScoped = true
+	} else {
+		ghssubitem.currentNamespaceScoped = false
+	}
+
 	ghssubitem.desiredCommit = subAnnotations[appv1alpha1.AnnotationGitTargetCommit]
 	ghssubitem.desiredTag = subAnnotations[appv1alpha1.AnnotationGitTag]
 	ghssubitem.syncTime = subAnnotations[appv1alpha1.AnnotationManualReconcileTime]
@@ -199,6 +206,9 @@ func (ghs *Subscriber) SubscribeItem(subitem *appv1alpha1.SubscriberItem) error 
 	// If manual sync time is updated, we want to restart the reconcile cycle and deploy the new commit immediately
 	if !strings.EqualFold(previousSyncTime, ghssubitem.syncTime) {
 		klog.Infof("Manual reconcile time has changed from %s to %s. restart to reconcile resources", previousSyncTime, ghssubitem.syncTime)
+
+		// reset commit ID to force sync
+		ghssubitem.commitID = ""
 
 		restart = true
 	}

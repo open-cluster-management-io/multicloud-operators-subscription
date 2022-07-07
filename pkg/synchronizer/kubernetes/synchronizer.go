@@ -93,6 +93,12 @@ func (sync *KubeSynchronizer) DeleteSingleSubscribedResource(hostSub types.Names
 
 	annotations := pkgObj.GetAnnotations()
 
+	// If the resource has a do-not-delete: "true" annotation, skip the deletion of this resource
+	if annotations[appv1alpha1.AnnotationResourceDoNotDeleteOption] == "true" {
+		klog.Infof("pkgName: %v, pkgNamespace: %v has do-not-delete annotation, skip deleting", pkgStatus.Name, pkgStatus.Namespace)
+		return nil
+	}
+
 	// The resource might not be owned by the subscription if you deployed the susbcription
 	// with subscription-admin role and merge option. In this case, do not delete the resource on subscription deletion.
 	if annotations[appv1alpha1.AnnotationHosting] != (hostSub.Namespace + "/" + hostSub.Name) {
@@ -105,7 +111,7 @@ func (sync *KubeSynchronizer) DeleteSingleSubscribedResource(hostSub types.Names
 	deletepolicy := metav1.DeletePropagationBackground
 	err = ri.Delete(context.TODO(), pkgObj.GetName(), metav1.DeleteOptions{PropagationPolicy: &deletepolicy})
 
-	if err != nil {
+	if err != nil && !errors.IsNotFound(err) {
 		klog.Errorf("Failed to delete package, appsub: %v, pkgName: %v, pkgNamespace: %v, err: %v",
 			hostSub, pkgStatus.Name, pkgStatus.Namespace, err)
 
@@ -163,7 +169,7 @@ func (sync *KubeSynchronizer) PurgeAllSubscribedResources(appsub *appv1alpha1.Su
 				SubscriptionPackageStatus: appSubUnitStatuses,
 			}
 
-			err := sync.SyncAppsubClusterStatus(appsub, appsubClusterStatus, nil)
+			err := sync.SyncAppsubClusterStatus(appsub, appsubClusterStatus, nil, nil)
 			if err != nil {
 				klog.Warning("error while sync app sub cluster status: ", err)
 			}
@@ -208,7 +214,7 @@ func (sync *KubeSynchronizer) PurgeAllSubscribedResources(appsub *appv1alpha1.Su
 		SubscriptionPackageStatus: appSubUnitStatuses,
 	}
 
-	err = sync.SyncAppsubClusterStatus(appsub, appsubClusterStatus, nil)
+	err = sync.SyncAppsubClusterStatus(appsub, appsubClusterStatus, nil, nil)
 	if err != nil {
 		klog.Warning("error while sync app sub cluster status: ", err)
 	}
@@ -235,6 +241,8 @@ func (sync *KubeSynchronizer) ProcessSubResources(appsub *appv1alpha1.Subscripti
 	for _, resource := range resources {
 		appSubUnitStatus := SubscriptionUnitStatus{}
 
+		resource := resource
+
 		template, err := sync.OverrideResource(hostSub, &resource)
 
 		if err != nil {
@@ -242,7 +250,7 @@ func (sync *KubeSynchronizer) ProcessSubResources(appsub *appv1alpha1.Subscripti
 			appSubUnitStatus.Message = err.Error()
 			appSubUnitStatuses = append(appSubUnitStatuses, appSubUnitStatus)
 
-			klog.Infof("Failed to overrifde resource. err: %v", err)
+			klog.Infof("Failed to override resource. err: %v", err)
 
 			continue
 		}
@@ -252,11 +260,15 @@ func (sync *KubeSynchronizer) ProcessSubResources(appsub *appv1alpha1.Subscripti
 		appSubUnitStatus.APIVersion = resource.Resource.GetAPIVersion()
 		appSubUnitStatus.Kind = resource.Resource.GetKind()
 		appSubUnitStatus.Name = resource.Resource.GetName()
-		appSubUnitStatus.Namespace = resource.Resource.GetNamespace()
 
 		pkgGVR, isNamespaced, err := sync.getGVRfromGVK(resource.Gvk.Group, resource.Gvk.Version, resource.Gvk.Kind)
 
+		if isNamespaced {
+			appSubUnitStatus.Namespace = resource.Resource.GetNamespace()
+		}
+
 		if err != nil {
+			appSubUnitStatus.Namespace = resource.Resource.GetNamespace()
 			appSubUnitStatus.Phase = string(appSubStatusV1alpha1.PackageDeployFailed)
 			appSubUnitStatus.Message = err.Error()
 			appSubUnitStatuses = append(appSubUnitStatuses, appSubUnitStatus)
@@ -294,7 +306,7 @@ func (sync *KubeSynchronizer) ProcessSubResources(appsub *appv1alpha1.Subscripti
 		CheckoutSummary:           checkoutSummary,
 	}
 
-	err := sync.SyncAppsubClusterStatus(appsub, appsubClusterStatus, nil)
+	err := sync.SyncAppsubClusterStatus(appsub, appsubClusterStatus, nil, nil)
 	if err != nil {
 		klog.Warning("error while sync app sub cluster status: ", err)
 	}
@@ -388,6 +400,8 @@ func (sync *KubeSynchronizer) updateResourceByTemplateUnit(ri dynamic.ResourceIn
 	overwrite := false
 	merge := true
 	tplown := sync.Extension.GetHostFromObject(tplunit)
+	isHelmRelease := strings.EqualFold(tplunit.GetAPIVersion(), "apps.open-cluster-management.io/v1") &&
+		strings.EqualFold(tplunit.GetKind(), "HelmRelease")
 
 	tmplAnnotations := tplunit.GetAnnotations()
 
@@ -442,7 +456,7 @@ func (sync *KubeSynchronizer) updateResourceByTemplateUnit(ri dynamic.ResourceIn
 		newobj = utils.RemoveSubOwnerRef(newobj)
 	}
 
-	if merge || specialResource {
+	if (merge || specialResource) && !isHelmRelease {
 		if specialResource {
 			klog.Info("One of special resources requiring merge update")
 		}

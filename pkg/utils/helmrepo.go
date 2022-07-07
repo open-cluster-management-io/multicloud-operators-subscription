@@ -255,14 +255,15 @@ func CreateOrUpdateHelmChart(
 					}},
 				},
 				Repo: releasev1.HelmReleaseRepo{
-					Source:             source,
-					ConfigMapRef:       channel.Spec.ConfigMapRef,
-					InsecureSkipVerify: channel.Spec.InsecureSkipVerify,
-					SecretRef:          channel.Spec.SecretRef,
-					ChartName:          packageName,
-					Version:            version,
-					Digest:             digest,
-					AltSource:          altSource,
+					Source:                        source,
+					ConfigMapRef:                  channel.Spec.ConfigMapRef,
+					InsecureSkipVerify:            channel.Spec.InsecureSkipVerify,
+					SecretRef:                     channel.Spec.SecretRef,
+					ChartName:                     packageName,
+					Version:                       version,
+					Digest:                        digest,
+					AltSource:                     altSource,
+					WatchNamespaceScopedResources: sub.Spec.WatchHelmNamespaceScopedResources,
 				},
 			}
 		} else {
@@ -286,15 +287,19 @@ func CreateOrUpdateHelmChart(
 			digest = chartVersions[0].Digest
 		}
 
+		// wipe the existing spec, it will be populated by the override helper function later
+		helmRelease.Spec = nil
+
 		helmRelease.Repo = releasev1.HelmReleaseRepo{
-			Source:             source,
-			ConfigMapRef:       channel.Spec.ConfigMapRef,
-			InsecureSkipVerify: channel.Spec.InsecureSkipVerify,
-			SecretRef:          channel.Spec.SecretRef,
-			ChartName:          packageName,
-			Version:            version,
-			Digest:             digest,
-			AltSource:          altSource,
+			Source:                        source,
+			ConfigMapRef:                  channel.Spec.ConfigMapRef,
+			InsecureSkipVerify:            channel.Spec.InsecureSkipVerify,
+			SecretRef:                     channel.Spec.SecretRef,
+			ChartName:                     packageName,
+			Version:                       version,
+			Digest:                        digest,
+			AltSource:                     altSource,
+			WatchNamespaceScopedResources: sub.Spec.WatchHelmNamespaceScopedResources,
 		}
 	}
 

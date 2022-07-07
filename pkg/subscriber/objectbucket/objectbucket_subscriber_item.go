@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -377,7 +376,8 @@ func (obsi *SubscriberItem) doSubscription() {
 	var doErr error
 
 	for _, tpl := range tpls {
-		resource, err := obsi.doSubscribeManifest(&tpl)
+		tpl := tpl
+		resource, err := obsi.doSubscribeManifest(&tpl) // this is now the address of the inner tpl
 
 		if err != nil {
 			klog.Errorf("object bucket failed to package deployable, err: %v", err)
@@ -465,17 +465,6 @@ func (obsi *SubscriberItem) doSubscribeManifest(template *unstructured.Unstructu
 		klog.Info(errmsg)
 
 		return nil, errors.New(errmsg)
-	}
-
-	// If resource namespace is different than the subscription namespace, setting the owner ref
-	// will cause the resource to be deleted by k8s garbage collection
-	if template.GetNamespace() == obsi.Subscription.Namespace {
-		template.SetOwnerReferences([]metav1.OwnerReference{{
-			APIVersion: SubscriptionGVK.GroupVersion().String(),
-			Kind:       SubscriptionGVK.Kind,
-			Name:       obsi.Subscription.Name,
-			UID:        obsi.Subscription.UID,
-		}})
 	}
 
 	validgvk := template.GetObjectKind().GroupVersionKind()

@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -115,7 +115,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 			SkipAppSubStatusResDel: false,
 		}
 
-		err = s.SyncAppsubClusterStatus(nil, appsubClusterStatus, nil)
+		err = s.SyncAppsubClusterStatus(nil, appsubClusterStatus, nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		time.Sleep(8 * time.Second)
@@ -154,7 +154,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 			SubscriptionPackageStatus: appSubUnitStatuses,
 			CheckoutSummary:           appSubCheckoutSummary2,
 		}
-		err = s.SyncAppsubClusterStatus(nil, updateAppsubClusterStatus, nil)
+		err = s.SyncAppsubClusterStatus(nil, updateAppsubClusterStatus, nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		time.Sleep(8 * time.Second)
@@ -179,7 +179,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 			SubscriptionPackageStatus: appSubUnitStatuses,
 		}
 
-		err = s.SyncAppsubClusterStatus(nil, rmAppsubClusterStatus, nil)
+		err = s.SyncAppsubClusterStatus(nil, rmAppsubClusterStatus, nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		time.Sleep(8 * time.Second)
@@ -219,7 +219,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 			SkipAppSubStatusResDel: false,
 		}
 
-		err = s.SyncAppsubClusterStatus(nil, appsubClusterStatus, nil)
+		err = s.SyncAppsubClusterStatus(nil, appsubClusterStatus, nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		time.Sleep(8 * time.Second)
@@ -253,7 +253,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 			Action:                    "APPLY",
 			SubscriptionPackageStatus: appSubUnitStatuses,
 		}
-		err = s.SyncAppsubClusterStatus(nil, updateAppsubClusterStatus, nil)
+		err = s.SyncAppsubClusterStatus(nil, updateAppsubClusterStatus, nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		time.Sleep(10 * time.Second)
@@ -281,7 +281,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 			Action:                    "APPLY",
 			SubscriptionPackageStatus: appSubUnitStatuses,
 		}
-		err = s.SyncAppsubClusterStatus(nil, updateAppsubClusterStatus, nil)
+		err = s.SyncAppsubClusterStatus(nil, updateAppsubClusterStatus, nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		time.Sleep(8 * time.Second)
@@ -306,7 +306,7 @@ var _ = Describe("test create/update/delete appsub status for standalone and man
 			SubscriptionPackageStatus: appSubUnitStatuses,
 		}
 
-		err = s.SyncAppsubClusterStatus(nil, rmAppsubClusterStatus, nil)
+		err = s.SyncAppsubClusterStatus(nil, rmAppsubClusterStatus, nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		time.Sleep(8 * time.Second)
