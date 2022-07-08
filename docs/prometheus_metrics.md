@@ -24,7 +24,7 @@ The following metrics can be scrapped from *Managed Clusters*:
 
 With every metric recorded, you can find the following custom vector labels for identifying its source:
 
-- `subscriber_type` (*Git*/*HelmRepo*/*ObjectBucket*)
+- `subscriber_type` ( *Git* / *HelmRepo* / *ObjectBucket* )
 - `subscriber_namespace`
 - `subscriber_name`
 
@@ -37,7 +37,7 @@ For scraping with Prometheus, you need to create 3 resources in each *Managed Cl
 - a `RoleBinding` in Prometheus' namespace** binding Prometheus's existing `ServiceAccount` named `prometheus-k8s` to the newly created `Role`.
 - a `ServiceMonitor` in Prometheus' namespace** for explicitly configuring Prometheus to scrap our metric service.
 
-** In *OpenShift* clusters, Prometheus' namespace is `openshift-monitoring`, for none-*OpenShift*_* clusters, it's `monitoring`.
+** In *OpenShift* clusters, Prometheus' namespace is `openshift-monitoring`, for none-*OpenShift* clusters, it's `monitoring`.
 
 Here's an example of the 3 required resources, please modify these to fit your environment:
 
@@ -114,7 +114,7 @@ rules:
 ### Collecting Metrics for Observability
 
 For the [Observability Operator](https://github.com/stolostron/multicluster-observability-operator) to collect the aforementioned metrics from the *Managed Clusters* and display them on the *Hub Cluster*, you need to configure the `observability-metrics-custom-allowlist` *ConfigMap* in the `open-cluster-management-observability` namespace on the *Hub Cluster*.</br>
-Note that for *Histograms* type metrics, there are actually 3 metrics created per each *Histogram*, they are identified by the *bucket*, *count*, and *sum* prefixes to the metric name. Here's an example of a working *ConfigMap*:
+Note that for *Histogram* type metrics, there are actually 3 metrics created per each *Histogram*, they are identified by the *bucket*, *count*, and *sum* suffixes to the metric name. Here's an example of a working *ConfigMap*:
 
 ```yaml
 apiVersion: v1

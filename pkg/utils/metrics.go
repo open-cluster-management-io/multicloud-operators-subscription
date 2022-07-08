@@ -57,6 +57,7 @@ var subscriberVectorLabels = []string{"subscriber_type", "subscriber_namespace",
 // #################
 // #### Metrics ####
 // #################
+
 var SuccessfulCheckoutCount = *promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "subscriber_successful_checkout_count",
 	Help: "Counter for successful checkout process count",
