@@ -83,8 +83,6 @@ type SubscriberItem struct {
 	currentNamespaceScoped bool
 	userID                 string
 	userGroup              string
-	successClonesCount     int
-	errorClonesCount       int
 }
 
 type kubeResource struct {
@@ -265,6 +263,13 @@ func (ghsi *SubscriberItem) doSubscription() error {
 		return err
 	}
 
+	// Update the checkout metrics with the checkout summary
+	utils.UpdateCheckoutMetrics(
+		utils.MetricSubscriberType_Git,
+		ghsi.SubscriberItem.Subscription.Namespace,
+		ghsi.SubscriberItem.Subscription.Name,
+		checkoutSummary)
+
 	klog.Info("Git commit: ", commitID)
 
 	if strings.EqualFold(ghsi.reconcileRate, "medium") {
@@ -383,7 +388,7 @@ func (ghsi *SubscriberItem) doSubscription() error {
 	allowedGroupResources, deniedGroupResources := utils.GetAllowDenyLists(*ghsi.Subscription)
 
 	if err := ghsi.synchronizer.ProcessSubResources(ghsi.Subscription, ghsi.resources,
-		allowedGroupResources, deniedGroupResources, ghsi.clusterAdmin, checkoutSummary); err != nil {
+		allowedGroupResources, deniedGroupResources, ghsi.clusterAdmin); err != nil {
 		klog.Error(err)
 
 		ghsi.successful = false

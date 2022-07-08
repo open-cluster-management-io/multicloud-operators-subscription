@@ -40,6 +40,7 @@ import (
 	ansiblejob "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/ansible/v1alpha1"
 	"open-cluster-management.io/multicloud-operators-subscription/pkg/controller"
 	leasectrl "open-cluster-management.io/multicloud-operators-subscription/pkg/controller/subscription"
+	"open-cluster-management.io/multicloud-operators-subscription/pkg/metrics"
 	"open-cluster-management.io/multicloud-operators-subscription/pkg/subscriber"
 	"open-cluster-management.io/multicloud-operators-subscription/pkg/synchronizer"
 	"open-cluster-management.io/multicloud-operators-subscription/pkg/utils"
@@ -306,6 +307,12 @@ func setupStandalone(mgr manager.Manager, hubconfig *rest.Config, id *types.Name
 
 			return err
 		}
+	}
+
+	// Create the metrics service
+	if err := metrics.AddToManager(mgr); err != nil {
+		klog.Error("Failed to create metrics service:", err)
+		return err
 	}
 
 	return nil
