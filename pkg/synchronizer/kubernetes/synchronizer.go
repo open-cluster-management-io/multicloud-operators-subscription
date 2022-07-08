@@ -220,7 +220,7 @@ func (sync *KubeSynchronizer) PurgeAllSubscribedResources(appsub *appv1alpha1.Su
 }
 
 func (sync *KubeSynchronizer) ProcessSubResources(appsub *appv1alpha1.Subscription, resources []ResourceUnit,
-	allowlist, denyList map[string]map[string]string, isAdmin bool, checkoutSummary utils.CheckoutSummary) error {
+	allowlist, denyList map[string]map[string]string, isAdmin bool) error {
 	hostSub := types.NamespacedName{
 		Namespace: appsub.GetNamespace(),
 		Name:      appsub.GetName(),
@@ -300,7 +300,6 @@ func (sync *KubeSynchronizer) ProcessSubResources(appsub *appv1alpha1.Subscripti
 		AppSub:                    hostSub,
 		Action:                    "APPLY",
 		SubscriptionPackageStatus: appSubUnitStatuses,
-		CheckoutSummary:           checkoutSummary,
 	}
 
 	err := sync.SyncAppsubClusterStatus(appsub, appsubClusterStatus, nil, nil)

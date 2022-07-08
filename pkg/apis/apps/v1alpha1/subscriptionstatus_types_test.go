@@ -63,12 +63,6 @@ var (
 		},
 		Statuses: SubscriptionClusterStatusMap{
 			SubscriptionStatus: []SubscriptionUnitStatus{*saStatus},
-			CheckoutStatus: CheckoutStatus{
-				Count:       2,
-				LatencyLast: 559,
-				LatencyMin:  336,
-				LatencyMax:  6699,
-			},
 		},
 	}
 )
@@ -92,12 +86,6 @@ func TestAppSubStatus(t *testing.T) {
 	g.Expect(c.Update(context.TODO(), updated)).NotTo(gomega.HaveOccurred())
 	g.Expect(c.Get(context.TODO(), pkgKey, fetched)).NotTo(gomega.HaveOccurred())
 	g.Expect(fetched).To(gomega.Equal(updated))
-
-	// Test Checkout Status
-	g.Expect(fetched.Statuses.CheckoutStatus.Count).To(gomega.Equal(2))
-	g.Expect(fetched.Statuses.CheckoutStatus.LatencyLast).To(gomega.Equal(559))
-	g.Expect(fetched.Statuses.CheckoutStatus.LatencyMin).To(gomega.Equal(336))
-	g.Expect(fetched.Statuses.CheckoutStatus.LatencyMax).To(gomega.Equal(6699))
 
 	// Test Delete
 	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
