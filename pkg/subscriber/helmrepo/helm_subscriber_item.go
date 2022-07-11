@@ -162,7 +162,14 @@ func (hrsi *SubscriberItem) getRepoInfo(usePrimary bool) (*repo.IndexFile, strin
 		return nil, "", err
 	}
 
-	indexFile, hash, err := getHelmRepoIndex(httpClient, hrsi.Subscription, hrsi.ChannelSecret, repoURL)
+	indexFile, hash, checkoutSummary, err := getHelmRepoIndex(httpClient, hrsi.Subscription, hrsi.ChannelSecret, repoURL)
+
+	// Update the checkout metrics with the checkout summary
+	utils.UpdateCheckoutMetrics(
+		utils.MetricSubscriberType_HelmRepo,
+		hrsi.SubscriberItem.Subscription.Namespace,
+		hrsi.SubscriberItem.Subscription.Name,
+		checkoutSummary)
 
 	if err != nil {
 		klog.Error(err, "Unable to retrieve the helm repo index", repoURL)
@@ -486,15 +493,24 @@ func getHelmRepoClient(chnCfg *corev1.ConfigMap, insecureSkipVerify bool) (*http
 
 //getHelmRepoIndex retreives the index.yaml, loads it into a repo.IndexFile and filters it
 func getHelmRepoIndex(client rest.HTTPClient, sub *appv1.Subscription,
-	chnSrt *corev1.Secret, repoURL string) (indexFile *repo.IndexFile, hash string, err error) {
+	chnSrt *corev1.Secret, repoURL string) (indexFile *repo.IndexFile, hash string,
+	checkoutSummary utils.CheckoutSummary, err error) {
 	cleanRepoURL := strings.TrimSuffix(repoURL, "/") + "/index.yaml"
+
+	startTime := time.Now().UnixMilli()
 	req, err := http.NewRequest(http.MethodGet, cleanRepoURL, nil)
+	endTime := time.Now().UnixMilli()
 
 	if err != nil {
 		klog.Error(err, "Can not build request: ", cleanRepoURL)
+		checkoutSummary.FailedCount = 1
+		checkoutSummary.FailedLatencyMS = int(endTime - startTime)
 
-		return nil, "", err
+		return nil, "", checkoutSummary, err
 	}
+
+	checkoutSummary.SuccessfulCount = 1
+	checkoutSummary.SuccessfulLatencyMS = int(endTime - startTime)
 
 	if chnSrt != nil && chnSrt.Data != nil {
 		if authHeader, ok := chnSrt.Data["authHeader"]; ok {
@@ -503,7 +519,7 @@ func getHelmRepoIndex(client rest.HTTPClient, sub *appv1.Subscription,
 			if password, ok := chnSrt.Data["password"]; ok {
 				req.SetBasicAuth(string(user), string(password))
 			} else {
-				return nil, "", fmt.Errorf("password not found in secret for basic authentication")
+				return nil, "", checkoutSummary, fmt.Errorf("password not found in secret for basic authentication")
 			}
 		}
 	}
@@ -514,13 +530,13 @@ func getHelmRepoIndex(client rest.HTTPClient, sub *appv1.Subscription,
 	if err != nil {
 		klog.Error(err, "Http request failed: ", cleanRepoURL)
 
-		return nil, "", err
+		return nil, "", checkoutSummary, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		klog.Errorf("http request %s failed: status %s", cleanRepoURL, resp.Status)
 
-		return nil, "", fmt.Errorf("http request %s failed: status %s", cleanRepoURL, resp.Status)
+		return nil, "", checkoutSummary, fmt.Errorf("http request %s failed: status %s", cleanRepoURL, resp.Status)
 	}
 
 	klog.V(5).Info("Get succeeded: ", cleanRepoURL)
@@ -529,7 +545,7 @@ func getHelmRepoIndex(client rest.HTTPClient, sub *appv1.Subscription,
 	if err != nil {
 		klog.Error(err, "Unable to read body: ", cleanRepoURL)
 
-		return nil, "", err
+		return nil, "", checkoutSummary, err
 	}
 
 	defer resp.Body.Close()
@@ -540,12 +556,12 @@ func getHelmRepoIndex(client rest.HTTPClient, sub *appv1.Subscription,
 	if err != nil {
 		klog.Error(err, "Unable to parse the indexfile: ", cleanRepoURL)
 
-		return nil, "", err
+		return nil, "", checkoutSummary, err
 	}
 
 	err = utils.FilterCharts(sub, indexfile)
 
-	return indexfile, hash, err
+	return indexfile, hash, checkoutSummary, err
 }
 
 func GetSubscriptionChartsOnHub(hubClt client.Client, channel, secondChannel *chnv1.Channel, sub *appv1.Subscription) ([]*releasev1.HelmRelease, error) {
@@ -622,7 +638,8 @@ func getChartIndexWithChannel(hubClt client.Client, channel *chnv1.Channel, sub 
 		return nil, gerr.Wrapf(err, "Unable to create client for helm repo %v", channel.Spec.Pathname)
 	}
 
-	indexFile, _, err := getHelmRepoIndex(httpClient, sub, chSecret, channel.Spec.Pathname)
+	// NOTE: anything to do with the checkout summary here?
+	indexFile, _, _, err := getHelmRepoIndex(httpClient, sub, chSecret, channel.Spec.Pathname)
 	if err != nil {
 		return nil, gerr.Wrapf(err, "unable to retrieve the helm repo index %v", channel.Spec.Pathname)
 	}
