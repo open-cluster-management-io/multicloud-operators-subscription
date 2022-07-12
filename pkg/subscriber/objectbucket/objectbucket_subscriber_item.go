@@ -342,9 +342,17 @@ func (obsi *SubscriberItem) doSubscription() {
 
 	tpls := []unstructured.Unstructured{}
 
+	var totalLatency int
+
+	expectedCount := len(keys)
+
 	// converting template from obeject store to DPL
 	for _, key := range keys {
+		startTime := time.Now().UnixMilli()
 		tplb, err := obsi.objectStore.Get(obsi.bucket, key)
+		endTime := time.Now().UnixMilli()
+		totalLatency += int(startTime - endTime)
+
 		if err != nil {
 			klog.Error("Failed to get object ", key, " in bucket ", obsi.bucket)
 			obsi.successful = false
@@ -354,6 +362,7 @@ func (obsi *SubscriberItem) doSubscription() {
 
 		// skip empty body object store
 		if len(tplb.Content) == 0 {
+			expectedCount--
 			continue
 		}
 
@@ -369,6 +378,24 @@ func (obsi *SubscriberItem) doSubscription() {
 
 		tpls = append(tpls, *tpl)
 	}
+
+	// populate the checkout summary
+	checkoutSummary := utils.CheckoutSummary{}
+
+	if len(tpls) == expectedCount {
+		checkoutSummary.SuccessfulCount = 1
+		checkoutSummary.SuccessfulLatencyMS = totalLatency
+	} else {
+		checkoutSummary.FailedCount = 1
+		checkoutSummary.FailedLatencyMS = totalLatency
+	}
+
+	// Update the checkout metrics with the checkout summary
+	utils.UpdateCheckoutMetrics(
+		utils.MetricSubscriberType_ObjectBucket,
+		obsi.SubscriberItem.Subscription.Namespace,
+		obsi.SubscriberItem.Subscription.Name,
+		checkoutSummary)
 
 	resources := make([]kubesynchronizer.ResourceUnit, 0)
 
