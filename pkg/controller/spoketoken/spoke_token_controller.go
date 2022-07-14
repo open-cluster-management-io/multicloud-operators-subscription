@@ -138,10 +138,11 @@ func (r *ReconcileAgentToken) Reconcile(ctx context.Context, request reconcile.R
 			}
 
 			return reconcile.Result{}, nil
-		} else {
-			klog.Errorf("Failed to get serviceaccount %v, error: %v", request.NamespacedName, err)
-			return reconcile.Result{RequeueAfter: requeuAfter * time.Minute}, err
 		}
+
+		klog.Errorf("Failed to get serviceaccount %v, error: %v", request.NamespacedName, err)
+
+		return reconcile.Result{RequeueAfter: requeuAfter * time.Minute}, err
 	}
 
 	// Get the service account token from the service account's secret list
