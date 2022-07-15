@@ -1301,37 +1301,6 @@ func TestGetReleaseName(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 }
 
-func TestIsSubscriptionBeDeleted(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	// Create client
-	c, err := client.New(cfg, client.Options{})
-	g.Expect(err).NotTo(HaveOccurred())
-
-	// Sub does not exist
-	g.Expect(IsSubscriptionBeDeleted(c, types.NamespacedName{Namespace: "does-not-exist", Name: "nope"})).To(BeTrue())
-
-	// Sub exists
-	obj := &appv1.Subscription{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Subscription",
-			APIVersion: "apps.open-cluster-management.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "myname",
-			Namespace: "default",
-			Annotations: map[string]string{
-				appv1.AnnotationHosting: "default" + "/" + "myname",
-			},
-		},
-	}
-	g.Expect(c.Create(context.TODO(), obj)).NotTo(HaveOccurred())
-
-	defer c.Delete(context.TODO(), obj)
-
-	g.Expect(IsSubscriptionBeDeleted(c, types.NamespacedName{Namespace: "default", Name: "myname"})).To(BeFalse())
-}
-
 func TestSetPartOfLabel(t *testing.T) {
 	g := NewGomegaWithT(t)
 
