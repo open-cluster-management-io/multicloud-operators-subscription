@@ -503,6 +503,7 @@ func getHelmRepoIndex(client rest.HTTPClient, sub *appv1.Subscription,
 
 	if err != nil {
 		klog.Error(err, "Can not build request: ", cleanRepoURL)
+
 		checkoutSummary.FailedCount = 1
 		checkoutSummary.FailedLatencyMS = int(endTime - startTime)
 
@@ -638,7 +639,7 @@ func getChartIndexWithChannel(hubClt client.Client, channel *chnv1.Channel, sub 
 		return nil, gerr.Wrapf(err, "Unable to create client for helm repo %v", channel.Spec.Pathname)
 	}
 
-	// NOTE: anything to do with the checkout summary here?
+	// hub has no usage for the checkout summary
 	indexFile, _, _, err := getHelmRepoIndex(httpClient, sub, chSecret, channel.Spec.Pathname)
 	if err != nil {
 		return nil, gerr.Wrapf(err, "unable to retrieve the helm repo index %v", channel.Spec.Pathname)
