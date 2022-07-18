@@ -504,7 +504,7 @@ func getHelmRepoIndex(client rest.HTTPClient, sub *appv1.Subscription,
 	if err != nil {
 		klog.Error(err, "Can not build request: ", cleanRepoURL)
 
-		checkoutSummary.FailedCount = 1
+    checkoutSummary.FailedCount = 1
 		checkoutSummary.FailedLatencyMS = int(endTime - startTime)
 
 		return nil, "", checkoutSummary, err
