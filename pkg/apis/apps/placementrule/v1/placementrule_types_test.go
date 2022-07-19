@@ -42,18 +42,18 @@ var (
 		ClusterNamespace: "cluster2-ns",
 	}
 
-	prStatus = &PlacementRuleStatus{
+	prStatus = PlacementRuleStatus{
 		Decisions: []PlacementDecision{pdAlpha, pdBeta},
 	}
 
-	prClusterSelector = &GenericPlacementFields{
+	prClusterSelector = GenericPlacementFields{
 		ClusterSelector: &metav1.LabelSelector{
 			MatchLabels: map[string]string{"name": "cluster-1"},
 		},
 	}
 
-	prSpec = &PlacementRuleSpec{
-		GenericPlacementFields: GenericPlacementFields(*prClusterSelector),
+	prSpec = PlacementRuleSpec{
+		GenericPlacementFields: prClusterSelector,
 	}
 
 	placementRule = &PlacementRule{
@@ -65,8 +65,8 @@ var (
 			Name:      pkgKey.Name,
 			Namespace: pkgKey.Namespace,
 		},
-		Spec:   PlacementRuleSpec(*prSpec),
-		Status: PlacementRuleStatus(*prStatus),
+		Spec:   prSpec,
+		Status: prStatus,
 	}
 )
 
@@ -74,15 +74,15 @@ func TestPlacementRule(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	// Test Create and Get
-	// fetched := &PlacementRule{}
+	fetched := &PlacementRule{}
 
 	created := placementRule.DeepCopy()
 	g.Expect(c.Create(context.TODO(), created)).NotTo(gomega.HaveOccurred())
-	// g.Expect(c.Get(context.TODO(), pkgKey, fetched)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Get(context.TODO(), pkgKey, fetched)).NotTo(gomega.HaveOccurred())
 
-	// g.Expect(fetched).To(gomega.Equal(created))
+	g.Expect(fetched).To(gomega.Equal(created))
 
-	// // Test Delete
-	// g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
-	// g.Expect(c.Get(context.TODO(), pkgKey, fetched)).To(gomega.HaveOccurred())
+	// Test Delete
+	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Get(context.TODO(), pkgKey, fetched)).To(gomega.HaveOccurred())
 }
