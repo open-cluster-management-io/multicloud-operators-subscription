@@ -82,7 +82,7 @@ func TestPlacementRule(t *testing.T) {
 
 	g.Expect(fetched).To(gomega.Equal(created))
 
-	// Test Delete
-	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(c.Get(context.TODO(), pkgKey, fetched)).To(gomega.HaveOccurred())
+	// // Test Delete
+	// g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
+	// g.Expect(c.Get(context.TODO(), pkgKey, fetched)).To(gomega.HaveOccurred())
 }
