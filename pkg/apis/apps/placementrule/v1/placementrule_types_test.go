@@ -33,25 +33,23 @@ var (
 	}
 
 	pdAlpha = PlacementDecision{
-		ClusterName: "cluster-1",
+		ClusterName:      "cluster-1",
 		ClusterNamespace: "cluster1-ns",
 	}
 
 	pdBeta = PlacementDecision{
-		ClusterName: "cluster-2",
+		ClusterName:      "cluster-2",
 		ClusterNamespace: "cluster2-ns",
 	}
-
 
 	prStatus = &PlacementRuleStatus{
 		Decisions: []PlacementDecision{pdAlpha, pdBeta},
 	}
 
 	prClusterSelector = &GenericPlacementFields{
-		ClusterSelector: 
-			&metav1.LabelSelector{
-				MatchLabels: map[string]string{"name": "cluster-1"},
-			},
+		ClusterSelector: &metav1.LabelSelector{
+			MatchLabels: map[string]string{"name": "cluster-1"},
+		},
 	}
 
 	prSpec = &PlacementRuleSpec{
@@ -60,14 +58,14 @@ var (
 
 	placementRule = &PlacementRule{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "PlacementRule",
+			Kind:       "PlacementRule",
 			APIVersion: "apps.open-cluster-management.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pkgKey.Name,
 			Namespace: pkgKey.Namespace,
 		},
-		Spec: PlacementRuleSpec(*prSpec),
+		Spec:   PlacementRuleSpec(*prSpec),
 		Status: PlacementRuleStatus(*prStatus),
 	}
 )
@@ -75,16 +73,16 @@ var (
 func TestPlacementRule(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// // Test Create and Get
-	// fetched := &PlacementRule{}
+	// Test Create and Get
+	fetched := &PlacementRule{}
 
 	created := placementRule.DeepCopy()
 	g.Expect(c.Create(context.TODO(), created)).NotTo(gomega.HaveOccurred())
-	// g.Expect(c.Get(context.TODO(), pkgKey, fetched)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Get(context.TODO(), pkgKey, fetched)).NotTo(gomega.HaveOccurred())
 
-	// g.Expect(fetched).To(gomega.Equal(created))
+	g.Expect(fetched).To(gomega.Equal(created))
 
-	// // Test Delete
-	// g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
-	// g.Expect(c.Get(context.TODO(), pkgKey, fetched)).To(gomega.HaveOccurred())
+	// Test Delete
+	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Get(context.TODO(), pkgKey, fetched)).To(gomega.HaveOccurred())
 }
