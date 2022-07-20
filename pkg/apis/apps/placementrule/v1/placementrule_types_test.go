@@ -21,10 +21,7 @@ import (
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-var c client.Client
 
 var (
 	pkgKey = types.NamespacedName{
@@ -70,11 +67,7 @@ var (
 	}
 )
 
-func TestPlacementRule(t *testing.T) {
-	t.Logf("DEBUGGGGGGGGGGG client %v", c)
-	var c client.Client
-	t.Logf("DEBUGGGGGGGGGGG client %v", c)
-
+func TestPlacementRulev1(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	// Test Create and Get
