@@ -70,7 +70,7 @@ func TestPlacementRulev1(t *testing.T) {
 	fetched := &PlacementRule{}
 
 	created := placementRule.DeepCopy()
-	g.Expect(c.Create(context.TODO(), created)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Create(context.TODO(), placementRule)).NotTo(gomega.HaveOccurred())
 	g.Expect(c.Get(context.TODO(), pkgKey, fetched)).NotTo(gomega.HaveOccurred())
 
 	g.Expect(fetched).To(gomega.Equal(created))
