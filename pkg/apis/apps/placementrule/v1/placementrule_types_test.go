@@ -71,6 +71,10 @@ var (
 )
 
 func TestPlacementRule(t *testing.T) {
+	t.Logf("DEBUGGGGGGGGGGG client %v", c)
+	var c client.Client
+	t.Logf("DEBUGGGGGGGGGGG client %v", c)
+
 	g := gomega.NewGomegaWithT(t)
 
 	// Test Create and Get
