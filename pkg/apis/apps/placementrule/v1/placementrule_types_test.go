@@ -54,9 +54,6 @@ var (
 	}
 
 	placementRule = &PlacementRule{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "PlacementRule",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pkgKey.Name,
 			Namespace: pkgKey.Namespace,
