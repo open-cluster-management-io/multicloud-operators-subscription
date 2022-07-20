@@ -67,7 +67,12 @@ func TestPlacementRulev1(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	// Test Create and Get
-	fetched := &PlacementRule{}
+	fetched := &PlacementRule{ObjectMeta: metav1.ObjectMeta{
+		Name:      pkgKey.Name,
+		Namespace: pkgKey.Namespace,
+	},
+		Spec:   prSpec,
+		Status: prStatus}
 
 	created := placementRule.DeepCopy()
 	g.Expect(c.Create(context.TODO(), placementRule)).NotTo(gomega.HaveOccurred())
