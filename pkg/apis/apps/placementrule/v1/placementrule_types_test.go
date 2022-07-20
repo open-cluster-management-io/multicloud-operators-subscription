@@ -55,8 +55,7 @@ var (
 
 	placementRule = &PlacementRule{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "PlacementRule",
-			APIVersion: "apps.open-cluster-management.io/v1",
+			Kind: "PlacementRule",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pkgKey.Name,
