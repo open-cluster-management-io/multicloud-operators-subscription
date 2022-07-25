@@ -17,22 +17,25 @@ package utils
 import (
 	"context"
 	"encoding/json"
+	"reflect"
 	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	clientsetx "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	manifestWorkV1 "open-cluster-management.io/api/work/v1"
 	chnv1 "open-cluster-management.io/multicloud-operators-channel/pkg/apis/apps/v1"
 
 	appv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
@@ -283,10 +286,10 @@ var _ = Describe("subscription(s)", func() {
 })
 
 func TestDeleteSubscriptionCRD(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
+	g := NewGomegaWithT(t)
 
 	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
-	g.Expect(err).NotTo(gomega.HaveOccurred())
+	g.Expect(err).NotTo(HaveOccurred())
 
 	c = mgr.GetClient()
 
@@ -299,24 +302,24 @@ func TestDeleteSubscriptionCRD(t *testing.T) {
 	}()
 
 	crdx, err := clientsetx.NewForConfig(cfg)
-	g.Expect(err).NotTo(gomega.HaveOccurred())
+	g.Expect(err).NotTo(HaveOccurred())
 
 	runtimeClient, err := client.New(cfg, client.Options{})
-	g.Expect(err).NotTo(gomega.HaveOccurred())
+	g.Expect(err).NotTo(HaveOccurred())
 
 	slist := &appv1.SubscriptionList{}
 	err = runtimeClient.List(context.TODO(), slist, &client.ListOptions{})
-	g.Expect(err).NotTo(gomega.HaveOccurred())
+	g.Expect(err).NotTo(HaveOccurred())
 
 	DeleteSubscriptionCRD(runtimeClient, crdx)
 
 	slist = &appv1.SubscriptionList{}
 	err = runtimeClient.List(context.TODO(), slist, &client.ListOptions{})
-	g.Expect(!errors.IsNotFound(err)).To(gomega.BeTrue())
+	g.Expect(!errors.IsNotFound(err)).To(BeTrue())
 
 	slist = &appv1.SubscriptionList{}
 	err = runtimeClient.List(context.TODO(), slist, &client.ListOptions{})
-	g.Expect(!errors.IsNotFound(err)).To(gomega.BeTrue())
+	g.Expect(!errors.IsNotFound(err)).To(BeTrue())
 }
 
 func TestIsEqaulSubscriptionStatus(t *testing.T) {
@@ -577,6 +580,230 @@ func TestIsEmptySubscriptionStatus(t *testing.T) {
 	}
 }
 
+func TestGetHostSubscriptionFromObject(t *testing.T) {
+	var tests = []struct {
+		name     string
+		expected *types.NamespacedName
+		obj      metav1.Object
+	}{
+		{
+			name:     "nil object",
+			expected: nil,
+			obj:      nil,
+		},
+		{
+			name:     "nil annotations",
+			expected: nil,
+			obj: &metav1.ObjectMeta{
+				Annotations: nil,
+			},
+		},
+		{
+			name:     "empty annotations value",
+			expected: nil,
+			obj: &metav1.ObjectMeta{
+				Annotations: map[string]string{
+					appv1.AnnotationHosting: "",
+				},
+			},
+		},
+		{
+			name:     "invalid annotation",
+			expected: nil,
+			obj: &metav1.ObjectMeta{
+				Annotations: map[string]string{
+					appv1.AnnotationHosting: "no name slash namespace",
+				},
+			},
+		},
+		{
+			name:     "valid annotation",
+			expected: &types.NamespacedName{Name: "test", Namespace: "testnamespace"},
+			obj: &metav1.ObjectMeta{
+				Annotations: map[string]string{
+					appv1.AnnotationHosting: "testnamespace/test",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := GetHostSubscriptionFromObject(tt.obj)
+			if !reflect.DeepEqual(actual, tt.expected) {
+				t.Errorf("(%s): expected %v, actual %v", tt.name, tt.expected, actual)
+			}
+		})
+	}
+}
+
+func TestGetPauseLabel(t *testing.T) {
+	var tests = []struct {
+		name     string
+		expected bool
+		appsub   *appv1.Subscription
+	}{
+		{
+			name:     "no labels",
+			expected: false,
+			appsub: &appv1.Subscription{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: nil,
+				},
+			},
+		},
+		{
+			name:     "LabelSubscriptionPause is true",
+			expected: true,
+			appsub: &appv1.Subscription{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						appv1.LabelSubscriptionPause: "true",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := GetPauseLabel(tt.appsub)
+			if actual != tt.expected {
+				t.Errorf("(%s): expected %v, actual %v", tt.name, tt.expected, actual)
+			}
+		})
+	}
+}
+
+func TestRemoveSubAnnotations(t *testing.T) {
+	var tests = []struct {
+		name     string
+		obj      *unstructured.Unstructured
+		expected *unstructured.Unstructured
+	}{
+		{
+			name: "No annotations",
+			obj: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"annotations": nil,
+					},
+				},
+			},
+			expected: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{},
+				},
+			},
+		},
+		{
+			name: "objanno = 0",
+			obj: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"annotations": map[string]interface{}{
+							appv1.AnnotationClusterAdmin:      "true",
+							appv1.AnnotationHosting:           "",
+							appv1.AnnotationSyncSource:        "subnsdpl",
+							appv1.AnnotationHostingDeployable: "",
+							appv1.AnnotationChannelType:       "",
+						},
+					},
+				},
+			},
+			expected: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{},
+				},
+			},
+		},
+		{
+			name: "objanno > 0",
+			obj: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"annotations": map[string]interface{}{
+							appv1.AnnotationClusterAdmin:           "true",
+							appv1.AnnotationHosting:                "",
+							appv1.AnnotationSyncSource:             "subnsdpl",
+							appv1.AnnotationHostingDeployable:      "",
+							appv1.AnnotationChannelType:            "",
+							appv1.AnnotationResourceReconcileLevel: "med",
+						},
+					},
+				},
+			},
+			expected: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"annotations": map[string]interface{}{
+							appv1.AnnotationResourceReconcileLevel: "med",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := RemoveSubAnnotations(tt.obj)
+			if !reflect.DeepEqual(actual, tt.expected) {
+				t.Errorf("(%s): expected %v, actual %v", tt.name, tt.expected, actual)
+			}
+		})
+	}
+}
+
+func TestRemoveSubOwnerRef(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// newOwnerRefs = 0
+	obj := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"OwnerReferences": []metav1.OwnerReference{},
+			},
+		},
+	}
+
+	expected := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"OwnerReferences": []metav1.OwnerReference{},
+			},
+		},
+	}
+
+	g.Expect(RemoveSubOwnerRef(obj)).To(Equal(expected))
+
+	// newOwnerRefs > 0
+	obj2 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"OwnerReferences": []metav1.OwnerReference{
+					{Kind: "newOwnerRefs > 0"},
+				},
+			},
+		},
+	}
+
+	expected2 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"OwnerReferences": []metav1.OwnerReference{
+					{Kind: "newOwnerRefs > 0"},
+				},
+			},
+		},
+	}
+
+	obj2.SetOwnerReferences([]metav1.OwnerReference{{Kind: "newOwnerRefs > 0"}})
+	expected2.SetOwnerReferences([]metav1.OwnerReference{{Kind: "newOwnerRefs > 0"}})
+
+	g.Expect(*RemoveSubOwnerRef(obj2)).To(Equal(*expected2))
+}
+
 func TestIsSubscriptionBasicChanged(t *testing.T) {
 	var tests = []struct {
 		name     string
@@ -633,90 +860,456 @@ func TestIsSubscriptionBasicChanged(t *testing.T) {
 }
 
 func TestGetReconcileRate(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
+	g := NewGomegaWithT(t)
 
 	chnAnnotations := make(map[string]string)
 	subAnnotations := make(map[string]string)
 
 	// defaut medium
-	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(gomega.Equal("medium"))
+	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(Equal("medium"))
 
 	chnAnnotations[appv1.AnnotationResourceReconcileLevel] = "off"
-	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(gomega.Equal("off"))
+	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(Equal("off"))
 
 	chnAnnotations[appv1.AnnotationResourceReconcileLevel] = "low"
-	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(gomega.Equal("low"))
+	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(Equal("low"))
 
 	chnAnnotations[appv1.AnnotationResourceReconcileLevel] = "medium"
-	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(gomega.Equal("medium"))
+	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(Equal("medium"))
 
 	chnAnnotations[appv1.AnnotationResourceReconcileLevel] = "high"
-	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(gomega.Equal("high"))
+	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(Equal("high"))
 
 	// Subscription can override reconcile level to be off
 	subAnnotations[appv1.AnnotationResourceReconcileLevel] = "off"
-	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(gomega.Equal("off"))
+	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(Equal("off"))
 
 	// Subscription can not override reconcile level to be something other than off
 	subAnnotations[appv1.AnnotationResourceReconcileLevel] = "low"
-	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(gomega.Equal("high"))
+	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(Equal("high"))
 
 	// If annotation has unknown value, default to medium
 	chnAnnotations[appv1.AnnotationResourceReconcileLevel] = "mediumhigh"
-	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(gomega.Equal("medium"))
+	g.Expect(GetReconcileRate(chnAnnotations, subAnnotations)).To(Equal("medium"))
 }
 
 func TestGetReconcileInterval(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
+	g := NewGomegaWithT(t)
 
 	// these intervals are not used if off. Just default values
 	loopPeriod, retryInterval, retries := GetReconcileInterval("off", chnv1.ChannelTypeGit)
 
-	g.Expect(loopPeriod).To(gomega.Equal(3 * time.Minute))
-	g.Expect(retryInterval).To(gomega.Equal(90 * time.Second))
-	g.Expect(retries).To(gomega.Equal(1))
+	g.Expect(loopPeriod).To(Equal(3 * time.Minute))
+	g.Expect(retryInterval).To(Equal(90 * time.Second))
+	g.Expect(retries).To(Equal(1))
 
 	// if reconcile rate is unknown, just default values
 	loopPeriod, retryInterval, retries = GetReconcileInterval("unknown", chnv1.ChannelTypeGit)
 
-	g.Expect(loopPeriod).To(gomega.Equal(3 * time.Minute))
-	g.Expect(retryInterval).To(gomega.Equal(90 * time.Second))
-	g.Expect(retries).To(gomega.Equal(1))
+	g.Expect(loopPeriod).To(Equal(3 * time.Minute))
+	g.Expect(retryInterval).To(Equal(90 * time.Second))
+	g.Expect(retries).To(Equal(1))
 
 	loopPeriod, retryInterval, retries = GetReconcileInterval("low", chnv1.ChannelTypeGit)
 
-	g.Expect(loopPeriod).To(gomega.Equal(1 * time.Hour))
-	g.Expect(retryInterval).To(gomega.Equal(3 * time.Minute))
-	g.Expect(retries).To(gomega.Equal(3))
+	g.Expect(loopPeriod).To(Equal(1 * time.Hour))
+	g.Expect(retryInterval).To(Equal(3 * time.Minute))
+	g.Expect(retries).To(Equal(3))
 
 	loopPeriod, retryInterval, retries = GetReconcileInterval("medium", chnv1.ChannelTypeGit)
 
-	g.Expect(loopPeriod).To(gomega.Equal(3 * time.Minute))
-	g.Expect(retryInterval).To(gomega.Equal(90 * time.Second))
-	g.Expect(retries).To(gomega.Equal(1))
+	g.Expect(loopPeriod).To(Equal(3 * time.Minute))
+	g.Expect(retryInterval).To(Equal(90 * time.Second))
+	g.Expect(retries).To(Equal(1))
 
 	loopPeriod, retryInterval, retries = GetReconcileInterval("medium", chnv1.ChannelTypeHelmRepo)
 
-	g.Expect(loopPeriod).To(gomega.Equal(15 * time.Minute))
-	g.Expect(retryInterval).To(gomega.Equal(90 * time.Second))
-	g.Expect(retries).To(gomega.Equal(1))
+	g.Expect(loopPeriod).To(Equal(15 * time.Minute))
+	g.Expect(retryInterval).To(Equal(90 * time.Second))
+	g.Expect(retries).To(Equal(1))
+
+	loopPeriod, retryInterval, retries = GetReconcileInterval("medium", chnv1.ChannelTypeObjectBucket)
+
+	g.Expect(loopPeriod).To(Equal(15 * time.Minute))
+	g.Expect(retryInterval).To(Equal(90 * time.Second))
+	g.Expect(retries).To(Equal(1))
 
 	loopPeriod, retryInterval, retries = GetReconcileInterval("high", chnv1.ChannelTypeGit)
 
-	g.Expect(loopPeriod).To(gomega.Equal(2 * time.Minute))
-	g.Expect(retryInterval).To(gomega.Equal(60 * time.Second))
-	g.Expect(retries).To(gomega.Equal(1))
+	g.Expect(loopPeriod).To(Equal(2 * time.Minute))
+	g.Expect(retryInterval).To(Equal(60 * time.Second))
+	g.Expect(retries).To(Equal(1))
+}
+
+func TestIsSameUnstructured(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Both empty unstructured objects
+	obj1 := &unstructured.Unstructured{}
+	obj2 := &unstructured.Unstructured{}
+
+	g.Expect(isSameUnstructured(obj1, obj2)).To(BeTrue())
+
+	// Differing GVK
+	obj1, obj2 = &unstructured.Unstructured{}, &unstructured.Unstructured{}
+	obj1.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Kind: "kind", Version: "v1"})
+	obj2.SetGroupVersionKind(schema.GroupVersionKind{Group: "Different group", Kind: "kind", Version: "v1"})
+
+	g.Expect(isSameUnstructured(obj1, obj2)).To(BeFalse())
+
+	// Differing Name
+	obj1, obj2 = &unstructured.Unstructured{}, &unstructured.Unstructured{}
+	obj1.SetName("obj1")
+	obj2.SetName("Obj2")
+
+	g.Expect(isSameUnstructured(obj1, obj2)).To(BeFalse())
+
+	// Differing Namespace
+	obj1, obj2 = &unstructured.Unstructured{}, &unstructured.Unstructured{}
+	obj1.SetNamespace("namespace1")
+	obj2.SetNamespace("namespace2")
+
+	g.Expect(isSameUnstructured(obj1, obj2)).To(BeFalse())
+
+	// Differing Labels
+	obj1, obj2 = &unstructured.Unstructured{}, &unstructured.Unstructured{}
+	obj1.SetLabels(map[string]string{"local-cluster": "true"})
+	obj2.SetLabels(map[string]string{"local-cluster": "false"})
+
+	g.Expect(isSameUnstructured(obj1, obj2)).To(BeFalse())
+
+	// Differing Annotations
+	obj1, obj2 = &unstructured.Unstructured{}, &unstructured.Unstructured{}
+	obj1.SetAnnotations(map[string]string{appv1.AnnotationGitBranch: "main"})
+	obj2.SetAnnotations(map[string]string{appv1.AnnotationGitBranch: "master"})
+
+	g.Expect(isSameUnstructured(obj1, obj2)).To(BeFalse())
+}
+
+func TestIsHostingAppsub(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// nil appsub
+	g.Expect(IsHostingAppsub(nil)).To(BeFalse())
+
+	// nil annotations
+	appsub := &appv1.Subscription{}
+	appsub.SetAnnotations(nil)
+
+	g.Expect(IsHostingAppsub(appsub)).To(BeFalse())
+
+	// Contains annotation AnnotationHosting
+	appsub = &appv1.Subscription{}
+	appsub.SetAnnotations(map[string]string{appv1.AnnotationHosting: "testnamespace/testname"})
+
+	g.Expect(IsHostingAppsub(appsub)).To(BeTrue())
+}
+
+func TestParseAPIVersion(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// missing "/"
+	apiVersion := "v1"
+
+	group, version := ParseAPIVersion(apiVersion)
+	g.Expect(group).To(Equal(""))
+	g.Expect(version).To(Equal("v1"))
+
+	// Group & version
+	apiVersion = "apps.open-cluster-management.io/v1"
+
+	group, version = ParseAPIVersion(apiVersion)
+	g.Expect(group).To(Equal("apps.open-cluster-management.io"))
+	g.Expect(version).To(Equal("v1"))
+
+	// More than just group & version
+	apiVersion = "apps.open-cluster-management.io/v1/v2/v3"
+
+	group, version = ParseAPIVersion(apiVersion)
+	g.Expect(group).To(Equal(""))
+	g.Expect(version).To(Equal(""))
+}
+
+func TestParseNamespacedName(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// missing "/" invalid namespace
+	namespacedName := "mynamespacename"
+
+	namespace, name := ParseNamespacedName(namespacedName)
+	g.Expect(namespace).To(Equal(""))
+	g.Expect(name).To(Equal(""))
+
+	// valid namespace & name
+	namespacedName = "mynamespace/name"
+
+	namespace, name = ParseNamespacedName(namespacedName)
+	g.Expect(namespace).To(Equal("mynamespace"))
+	g.Expect(name).To(Equal("name"))
+}
+func TestIsResourceAllowed(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Not admin
+	resource := unstructured.Unstructured{}
+	allowlist := make(map[string]map[string]string)
+
+	g.Expect(IsResourceAllowed(resource, allowlist, false)).To(BeTrue())
+
+	// Not admin but policy
+	resource = unstructured.Unstructured{}
+	resource.SetAPIVersion("policy.open-cluster-management.io/v1")
+
+	allowlist = make(map[string]map[string]string)
+
+	g.Expect(IsResourceAllowed(resource, allowlist, false)).To(BeFalse())
+
+	// Admin, len(allowlist) = 0
+	resource = unstructured.Unstructured{}
+	allowlist = make(map[string]map[string]string)
+
+	g.Expect(IsResourceAllowed(resource, allowlist, true)).To(BeTrue())
+
+	// Admin, allowlist has Kind
+	resource = unstructured.Unstructured{}
+	resource.SetAPIVersion("policy.open-cluster-management.io/v1")
+	resource.SetKind("Deployment")
+
+	allowlist = make(map[string]map[string]string)
+	allowlist[resource.GetAPIVersion()] = make(map[string]string)
+	allowlist[resource.GetAPIVersion()][resource.GetKind()] = "true"
+
+	g.Expect(IsResourceAllowed(resource, allowlist, true)).To(BeTrue())
+}
+
+func TestIsResourceDenied(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Not admin
+	resource := unstructured.Unstructured{}
+	allowlist := make(map[string]map[string]string)
+
+	g.Expect(IsResourceDenied(resource, allowlist, false)).To(BeFalse())
+
+	// Admin, len(allowlist) = 0
+	resource = unstructured.Unstructured{}
+	allowlist = make(map[string]map[string]string)
+
+	g.Expect(IsResourceDenied(resource, allowlist, true)).To(BeFalse())
+
+	// Admin, denylist has Kind
+	resource = unstructured.Unstructured{}
+	resource.SetAPIVersion("policy.open-cluster-management.io/v1")
+	resource.SetKind("Deployment")
+
+	allowlist = make(map[string]map[string]string)
+	allowlist[resource.GetAPIVersion()] = make(map[string]string)
+	allowlist[resource.GetAPIVersion()][resource.GetKind()] = "true"
+
+	g.Expect(IsResourceDenied(resource, allowlist, true)).To(BeTrue())
+}
+
+func TestGetAllowDenyLists(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Empty allowed, denied lists
+	sub := appv1.Subscription{}
+
+	allowedResources, deniedResources := GetAllowDenyLists(sub)
+	g.Expect(allowedResources).To(Equal(make(map[string]map[string]string)))
+	g.Expect(deniedResources).To(Equal(make(map[string]map[string]string)))
+
+	// both allowed & denied Resources, nil APIVersion
+	sub = appv1.Subscription{}
+	sub.Spec.Allow = append(sub.Spec.Allow,
+		&appv1.AllowDenyItem{APIVersion: "", Kinds: []string{"Git"}})
+	sub.Spec.Deny = append(sub.Spec.Deny,
+		&appv1.AllowDenyItem{APIVersion: "", Kinds: []string{"Objectstore"}})
+
+	// Function returns two map[string]map[string]string
+	// Need to make the expected maps beforehand
+	expectedAllowedResources := make(map[string]map[string]string)
+	expectedAllowedResources[""] = make(map[string]string)
+	expectedAllowedResources[""]["Git"] = "Git"
+	expectedDeniedResources := make(map[string]map[string]string)
+	expectedDeniedResources[""] = make(map[string]string)
+	expectedDeniedResources[""]["Objectstore"] = "Objectstore"
+
+	allowedResources, deniedResources = GetAllowDenyLists(sub)
+	g.Expect(allowedResources).To(Equal(expectedAllowedResources))
+	g.Expect(deniedResources).To(Equal(expectedDeniedResources))
+}
+
+func TestCompareManifestWork(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Empty manifestWorks
+	oldManifestWork, newManifestWork := &manifestWorkV1.ManifestWork{}, &manifestWorkV1.ManifestWork{}
+
+	g.Expect(CompareManifestWork(oldManifestWork, newManifestWork)).To(BeTrue())
+
+	// Differing sizes
+	oldManifestWork = &manifestWorkV1.ManifestWork{}
+	newManifestWork = &manifestWorkV1.ManifestWork{}
+
+	oldManifestWork.Spec.Workload.Manifests = append(oldManifestWork.Spec.Workload.Manifests, manifestWorkV1.Manifest{})
+
+	g.Expect(CompareManifestWork(oldManifestWork, newManifestWork)).To(BeFalse())
+
+	// Equal manifestWorks
+	oldManifestWork = &manifestWorkV1.ManifestWork{}
+	newManifestWork = &manifestWorkV1.ManifestWork{}
+
+	// Need json formatted
+	endpointNS := &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Namespace",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "appsubNS",
+			Annotations: map[string]string{
+				appv1.AnnotationHosting: types.NamespacedName{Name: "test", Namespace: "testnamespace"}.String(),
+			},
+		},
+	}
+	manifestNSByte, _ := json.Marshal(endpointNS)
+
+	oldManifestWork.Spec.Workload.Manifests = append(oldManifestWork.Spec.Workload.Manifests,
+		manifestWorkV1.Manifest{RawExtension: runtime.RawExtension{Raw: manifestNSByte}})
+
+	newManifestWork.Spec.Workload.Manifests = append(newManifestWork.Spec.Workload.Manifests,
+		manifestWorkV1.Manifest{RawExtension: runtime.RawExtension{Raw: manifestNSByte}})
+
+	g.Expect(CompareManifestWork(oldManifestWork, newManifestWork)).To(BeTrue())
+
+	// Differing manifestWorks
+	oldManifestWork = &manifestWorkV1.ManifestWork{}
+	newManifestWork = &manifestWorkV1.ManifestWork{}
+
+	oldManifestWork.Spec.Workload.Manifests = append(oldManifestWork.Spec.Workload.Manifests,
+		manifestWorkV1.Manifest{RawExtension: runtime.RawExtension{Raw: manifestNSByte}})
+	// Need json formatted
+	endpointNS = &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Namespace",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "appsubNS",
+			Annotations: map[string]string{
+				appv1.AnnotationHosting: types.NamespacedName{Name: "test-different", Namespace: "testnamespace"}.String(),
+			},
+		},
+	}
+	manifestNSByte, _ = json.Marshal(endpointNS)
+
+	newManifestWork.Spec.Workload.Manifests = append(newManifestWork.Spec.Workload.Manifests,
+		manifestWorkV1.Manifest{RawExtension: runtime.RawExtension{Raw: manifestNSByte}})
+
+	g.Expect(CompareManifestWork(oldManifestWork, newManifestWork)).To(BeFalse())
+
+	// Fail to unmarshal new manifestwork
+	oldManifestWork = &manifestWorkV1.ManifestWork{}
+	newManifestWork = &manifestWorkV1.ManifestWork{}
+
+	oldManifestWork.Spec.Workload.Manifests = append(oldManifestWork.Spec.Workload.Manifests,
+		manifestWorkV1.Manifest{RawExtension: runtime.RawExtension{Raw: manifestNSByte}})
+
+	newManifestWork.Spec.Workload.Manifests = append(newManifestWork.Spec.Workload.Manifests,
+		manifestWorkV1.Manifest{RawExtension: runtime.RawExtension{Raw: []byte("fail to unmarshal me >;(")}})
+
+	g.Expect(CompareManifestWork(oldManifestWork, newManifestWork)).To(BeFalse())
+
+	// Fail to unmarshal old manifestwork
+	oldManifestWork = &manifestWorkV1.ManifestWork{}
+	newManifestWork = &manifestWorkV1.ManifestWork{}
+
+	oldManifestWork.Spec.Workload.Manifests = append(oldManifestWork.Spec.Workload.Manifests,
+		manifestWorkV1.Manifest{RawExtension: runtime.RawExtension{Raw: []byte("fail to unmarshal me >:(")}})
+
+	newManifestWork.Spec.Workload.Manifests = append(newManifestWork.Spec.Workload.Manifests,
+		manifestWorkV1.Manifest{RawExtension: runtime.RawExtension{Raw: manifestNSByte}})
+
+	g.Expect(CompareManifestWork(oldManifestWork, newManifestWork)).To(BeFalse())
+}
+
+func TestIsSubscriptionResourceChanged(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// phase = ""
+	oSub, nSub := &appv1.Subscription{}, &appv1.Subscription{}
+
+	g.Expect(IsSubscriptionResourceChanged(oSub, nSub)).To(BeTrue())
+
+	// phase != "" & oSub phase == nsub phase
+	oSub.Status.Phase = "same"
+	nSub.Status.Phase = "same"
+
+	g.Expect(IsSubscriptionResourceChanged(oSub, nSub)).To(BeFalse())
+}
+
+func TestIsHubRelatedStatusChanged(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	old, nnew := &appv1.SubscriptionStatus{}, &appv1.SubscriptionStatus{}
+
+	g.Expect(IsHubRelatedStatusChanged(old, nnew)).To(BeFalse())
+
+	// differing phases
+	old = &appv1.SubscriptionStatus{Phase: "a"}
+	nnew = &appv1.SubscriptionStatus{Phase: "b"}
+
+	g.Expect(IsHubRelatedStatusChanged(old, nnew)).To(BeTrue())
+
+	// differing PosthookJob
+	old = &appv1.SubscriptionStatus{}
+	nnew = &appv1.SubscriptionStatus{}
+
+	old.AnsibleJobsStatus = appv1.AnsibleJobsStatus{LastPosthookJob: "aa"}
+	nnew.AnsibleJobsStatus = appv1.AnsibleJobsStatus{LastPosthookJob: "b"}
+
+	g.Expect(IsHubRelatedStatusChanged(old, nnew)).To(BeTrue())
+
+	// differing PrehookJob
+	old = &appv1.SubscriptionStatus{}
+	nnew = &appv1.SubscriptionStatus{}
+
+	old.AnsibleJobsStatus = appv1.AnsibleJobsStatus{LastPrehookJob: "aa"}
+	nnew.AnsibleJobsStatus = appv1.AnsibleJobsStatus{LastPrehookJob: "b"}
+
+	g.Expect(IsHubRelatedStatusChanged(old, nnew)).To(BeTrue())
+
+	// differing statuses
+	old = &appv1.SubscriptionStatus{
+		Statuses: appv1.SubscriptionClusterStatusMap{"/": &appv1.SubscriptionPerClusterStatus{}}}
+	nnew = &appv1.SubscriptionStatus{}
+
+	g.Expect(IsHubRelatedStatusChanged(old, nnew)).To(BeTrue())
+}
+
+func TestGetReleaseName(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	base, err := GetReleaseName("shorter than max length")
+
+	g.Expect(base).To(Equal("shorter than max length"))
+	g.Expect(err).NotTo(HaveOccurred())
+
+	base, err = GetReleaseName("larger than max length (52 - len('-delete-registrations')")
+	g.Expect(base[:25]).To(Equal("larger than max length (5"))
+	g.Expect(err).NotTo(HaveOccurred())
 }
 
 func TestSetPartOfLabel(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
+	g := NewGomegaWithT(t)
 
 	// No app label in subscription
 	sub := &appv1.Subscription{}
 	obj := &unstructured.Unstructured{}
 	SetPartOfLabel(sub, obj)
 	labels := obj.GetLabels()
-	g.Expect(labels).To(gomega.BeNil())
+	g.Expect(labels).To(BeNil())
 
 	// Has app label in subscription
 	subLabels := make(map[string]string)
@@ -724,6 +1317,6 @@ func TestSetPartOfLabel(t *testing.T) {
 	sub.Labels = subLabels
 	SetPartOfLabel(sub, obj)
 	labels = obj.GetLabels()
-	g.Expect(labels).NotTo(gomega.BeNil())
-	g.Expect(labels["app.kubernetes.io/part-of"]).To(gomega.Equal("testApp"))
+	g.Expect(labels).NotTo(BeNil())
+	g.Expect(labels["app.kubernetes.io/part-of"]).To(Equal("testApp"))
 }

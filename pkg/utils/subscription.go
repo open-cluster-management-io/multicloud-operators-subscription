@@ -42,7 +42,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -390,6 +389,38 @@ var ServiceAccountPredicateFunctions = predicate.Funcs{
 		sa := e.Object.(*corev1.ServiceAccount)
 
 		if strings.EqualFold(sa.Namespace, addonServiceAccountNamespace) && strings.EqualFold(sa.Name, addonServiceAccountName) {
+			return true
+		}
+
+		return false
+	},
+}
+
+// AddonSATokenSecretPredicateFunctions watches for changes in klusterlet-addon-appmgr
+// service account token secret in open-cluster-management-agent-addon namespace
+var AddonSATokenSecretPredicateFunctions = predicate.Funcs{
+	UpdateFunc: func(e event.UpdateEvent) bool {
+		newSecret := e.ObjectNew.(*corev1.Secret)
+
+		if strings.EqualFold(newSecret.Namespace, addonServiceAccountNamespace) && strings.HasPrefix(newSecret.Name, addonServiceAccountName+"-token-") {
+			return true
+		}
+
+		return false
+	},
+	CreateFunc: func(e event.CreateEvent) bool {
+		secret := e.Object.(*corev1.Secret)
+
+		if strings.EqualFold(secret.Namespace, addonServiceAccountNamespace) && strings.HasPrefix(secret.Name, addonServiceAccountName+"-token-") {
+			return true
+		}
+
+		return false
+	},
+	DeleteFunc: func(e event.DeleteEvent) bool {
+		secret := e.Object.(*corev1.Secret)
+
+		if strings.EqualFold(secret.Namespace, addonServiceAccountNamespace) && strings.HasPrefix(secret.Name, addonServiceAccountName+"-token-") {
 			return true
 		}
 
@@ -822,12 +853,12 @@ func DeleteSubscriptionCRD(runtimeClient client.Client, crdx *clientsetx.Clients
 			}
 		}
 
-		_, err := crdx.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(), "multiclusterhubs.operator.open-cluster-management.io", v1.GetOptions{})
+		_, err := crdx.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(), "multiclusterhubs.operator.open-cluster-management.io", metav1.GetOptions{})
 
 		if err != nil && kerrors.IsNotFound(err) {
 			klog.Info("This is not ACM hub cluster. Deleting subscription CRD.")
 			// now get rid of the crd.
-			err = crdx.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), "subscriptions.apps.open-cluster-management.io", v1.DeleteOptions{})
+			err = crdx.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), "subscriptions.apps.open-cluster-management.io", metav1.DeleteOptions{})
 			if err != nil {
 				klog.Infof("Deleting subscription CRD failed. err: %s", err.Error())
 			} else {
@@ -1039,7 +1070,7 @@ func CompareManifestWork(oldManifestWork, newManifestWork *manifestWorkV1.Manife
 
 		err := json.Unmarshal(oldManifestWork.Spec.Workload.Manifests[i].Raw, oldManifest)
 		if err != nil {
-			klog.Errorf("falied to unmarshal old manifestwork, err: %v", err)
+			klog.Errorf("failed to unmarshal old manifestwork, err: %v", err)
 			return false
 		}
 
@@ -1047,7 +1078,7 @@ func CompareManifestWork(oldManifestWork, newManifestWork *manifestWorkV1.Manife
 
 		err = json.Unmarshal(newManifestWork.Spec.Workload.Manifests[i].Raw, newManifest)
 		if err != nil {
-			klog.Errorf("falied to unmarshal new manifestwork, err: %v", err)
+			klog.Errorf("failed to unmarshal new manifestwork, err: %v", err)
 			return false
 		}
 

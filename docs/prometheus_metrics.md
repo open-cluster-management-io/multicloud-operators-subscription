@@ -17,9 +17,9 @@ The following metrics can be scrapped from *Managed Clusters*:
 
 | Name                                   | Description                                      |
 | -------------------------------------- | ------------------------------------------------ |
-| subscriber_successful_checkout_count   | Counter for successful checkout process count    |
+| subscriber_successful_checkout_total   | Counter for total successful checkout processes  |
 | subscriber_successful_checkout_latency | Histogram of successful checkout process latency |
-| subscriber_failed_checkout_count       | Counter for failed checkout process count        |
+| subscriber_failed_checkout_total       | Counter for total failed checkout processes      |
 | subscriber_failed_checkout_latency     | Histogram of failed checkout process latency     |
 
 With every metric recorded, you can find the following custom vector labels for identifying its source:
@@ -122,12 +122,12 @@ kind: ConfigMap
 data:
   metrics_list.yaml: |
     names:
-    - subscriber_successful_checkout_count
+    - subscriber_successful_checkout_total
     - subscriber_successful_checkout_latency_bucket
-    - subscriber_successful_checkout_latency_count
+    - subscriber_successful_checkout_latency_total
     - subscriber_successful_checkout_latency_sum
-    - subscriber_failed_checkout_count
+    - subscriber_failed_checkout_total
     - subscriber_failed_checkout_latency_bucket
-    - subscriber_failed_checkout_latency_count
+    - subscriber_failed_checkout_latency_total
     - subscriber_failed_checkout_latency_sum
 ```

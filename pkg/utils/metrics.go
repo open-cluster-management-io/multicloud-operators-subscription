@@ -59,8 +59,8 @@ var subscriberVectorLabels = []string{"subscriber_type", "subscriber_namespace",
 // #################
 
 var SuccessfulCheckoutCount = *promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "subscriber_successful_checkout_count",
-	Help: "Counter for successful checkout process count",
+	Name: "subscriber_successful_checkout_total",
+	Help: "Counter for total successful checkout processes",
 }, subscriberVectorLabels)
 
 var SuccessfulCheckoutLatency = *promauto.NewHistogramVec(prometheus.HistogramOpts{
@@ -69,8 +69,8 @@ var SuccessfulCheckoutLatency = *promauto.NewHistogramVec(prometheus.HistogramOp
 }, subscriberVectorLabels)
 
 var FailedCheckoutCount = *promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "subscriber_failed_checkout_count",
-	Help: "Counter for failed checkout process count",
+	Name: "subscriber_failed_checkout_total",
+	Help: "Counter for total failed checkout processes",
 }, subscriberVectorLabels)
 
 var FailedCheckoutLatency = *promauto.NewHistogramVec(prometheus.HistogramOpts{

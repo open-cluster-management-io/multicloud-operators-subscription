@@ -23,7 +23,6 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	appv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
-	v1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
 	v1alpha1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1alpha1"
 	"open-cluster-management.io/multicloud-operators-subscription/pkg/utils"
 )
@@ -417,7 +416,7 @@ func updateAppsubReportResult(rClient client.Client, appsubNs, appsubName,
 
 	if standalone {
 		// Check if a hosting-subscription exists
-		appsub := &v1.Subscription{}
+		appsub := &appv1.Subscription{}
 
 		if isLocalCluster && !strings.HasSuffix(appsubName, localSuffix) {
 			appsubName += localSuffix
@@ -504,7 +503,7 @@ func deleteAppsubReportResult(rClient client.Client, appsubNs, appsubName, clust
 
 	if standalone {
 		// Check if a hosting-subscription exists
-		appsub := &v1.Subscription{}
+		appsub := &appv1.Subscription{}
 
 		if err := rClient.Get(context.TODO(),
 			client.ObjectKey{Name: appsubName, Namespace: appsubNs}, appsub); err != nil {

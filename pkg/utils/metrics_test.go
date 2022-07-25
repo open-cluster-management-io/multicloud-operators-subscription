@@ -17,7 +17,6 @@ package utils
 import (
 	"testing"
 
-	"github.com/onsi/gomega"
 	. "github.com/onsi/gomega"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 )
@@ -66,7 +65,7 @@ var subscriber3Bucket = subscriberSut{ // will only update successful metrics
 }
 
 func TestUpdateCheckoutMetrics(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
+	g := NewGomegaWithT(t)
 
 	// when all subscribers invoke the update checkout metrics utility function
 	UpdateCheckoutMetrics(
@@ -76,7 +75,7 @@ func TestUpdateCheckoutMetrics(t *testing.T) {
 	UpdateCheckoutMetrics(
 		subscriber3Bucket.Type, subscriber3Bucket.Namespace, subscriber3Bucket.Name, subscriber3Bucket.CheckoutSummary)
 
-	// then verify metrics data based on the fixture data (when success, failure is 0 - will not update respectively)
+	// then verify metrics data based on the fixture data (when success / failure is 0 - will not update)
 	g.Expect(2).To(Equal(testutil.CollectAndCount(SuccessfulCheckoutCount)))
 	g.Expect(2).To(Equal(testutil.CollectAndCount(SuccessfulCheckoutLatency)))
 	g.Expect(2).To(Equal(testutil.CollectAndCount(FailedCheckoutCount)))
