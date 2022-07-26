@@ -39,7 +39,7 @@ require (
 	open-cluster-management.io/multicloud-operators-channel v0.8.0
 	sigs.k8s.io/controller-runtime v0.11.1
 	sigs.k8s.io/kustomize/api v0.11.1
-	sigs.k8s.io/kustomize/kyaml v0.13.3
+	sigs.k8s.io/kustomize/kyaml v0.13.6
 )
 
 require (
