@@ -26,7 +26,7 @@ require (
 	golang.org/x/net v0.0.0-20220725212005-46097bf591d3
 	gomodules.xyz/jsonpatch/v3 v3.0.1
 	gopkg.in/src-d/go-git.v4 v4.13.1
-	helm.sh/helm/v3 v3.8.0
+	helm.sh/helm/v3 v3.8.2
 	k8s.io/api v0.23.9
 	k8s.io/apiextensions-apiserver v0.23.5
 	k8s.io/apimachinery v0.23.9
@@ -198,9 +198,9 @@ require (
 	k8s.io/component-base v0.23.5 // indirect
 	k8s.io/kube-aggregator v0.23.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf // indirect
-	k8s.io/kubectl v0.23.3 // indirect
+	k8s.io/kubectl v0.23.5 // indirect
 	k8s.io/utils v0.0.0-20220127004650-9b3446523e65 // indirect
-	oras.land/oras-go v1.1.0 // indirect
+	oras.land/oras-go v1.1.1 // indirect
 	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
 	sigs.k8s.io/kube-storage-version-migrator v0.0.4 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
