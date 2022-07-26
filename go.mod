@@ -4,12 +4,12 @@ go 1.18
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
-	github.com/aws/aws-sdk-go-v2 v1.13.0
-	github.com/aws/aws-sdk-go-v2/config v1.13.1
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.24.1
+	github.com/aws/aws-sdk-go-v2 v1.16.7
+	github.com/aws/aws-sdk-go-v2/config v1.15.14
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.27.1
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-git/go-git/v5 v5.4.2
-	github.com/go-logr/logr v1.2.2
+	github.com/go-logr/logr v1.2.3
 	github.com/google/go-github/v42 v42.0.0
 	github.com/johannesboyne/gofakes3 v0.0.0-20210819161434-5c8dfcfe5310
 	github.com/onsi/ginkgo/v2 v2.1.4
@@ -22,8 +22,8 @@ require (
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064
-	golang.org/x/net v0.0.0-20220412020605-290c469a71a5
+	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
+	golang.org/x/net v0.0.0-20220725212005-46097bf591d3
 	gomodules.xyz/jsonpatch/v3 v3.0.1
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	helm.sh/helm/v3 v3.8.0
@@ -33,11 +33,11 @@ require (
 	k8s.io/cli-runtime v0.23.3
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog v1.0.0
-	k8s.io/klog/v2 v2.40.1
+	k8s.io/klog/v2 v2.70.1
 	open-cluster-management.io/addon-framework v0.3.0
-	open-cluster-management.io/api v0.6.1-0.20220208144021-3297cac74dc5
-	open-cluster-management.io/multicloud-operators-channel v0.7.1-0.20220413191652-67d1cc8d57fc
-	sigs.k8s.io/controller-runtime v0.11.0
+	open-cluster-management.io/api v0.8.0
+	open-cluster-management.io/multicloud-operators-channel v0.8.0
+	sigs.k8s.io/controller-runtime v0.11.1
 	sigs.k8s.io/kustomize/api v0.11.1
 	sigs.k8s.io/kustomize/kyaml v0.13.3
 )
@@ -62,18 +62,20 @@ require (
 	github.com/acomagu/bufpipe v1.0.3 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/aws/aws-sdk-go v1.42.50 // indirect
-	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.2.0 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.8.0 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.10.0 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.4 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.2.0 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.5 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.7.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.7.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.11.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.9.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.14.0 // indirect
-	github.com/aws/smithy-go v1.10.0 // indirect
+	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.4.3 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.12.9 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.8 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.14 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.8 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.15 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.0.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.9.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.1.9 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.8 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.13.8 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.11.12 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.16.9 // indirect
+	github.com/aws/smithy-go v1.12.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
@@ -110,7 +112,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/go-cmp v0.5.7 // indirect
+	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
@@ -176,7 +178,7 @@ require (
 	go.starlark.net v0.0.0-20220203230714-bb14e151c28f // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11 // indirect
