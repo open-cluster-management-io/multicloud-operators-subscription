@@ -27,10 +27,10 @@ require (
 	gomodules.xyz/jsonpatch/v3 v3.0.1
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	helm.sh/helm/v3 v3.8.0
-	k8s.io/api v0.23.3
+	k8s.io/api v0.23.9
 	k8s.io/apiextensions-apiserver v0.23.3
-	k8s.io/apimachinery v0.23.3
-	k8s.io/cli-runtime v0.23.3
+	k8s.io/apimachinery v0.23.9
+	k8s.io/cli-runtime v0.23.9
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.70.1
