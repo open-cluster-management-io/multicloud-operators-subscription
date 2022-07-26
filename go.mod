@@ -21,14 +21,14 @@ require (
 	github.com/prometheus/client_golang v1.12.2
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.5
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
 	golang.org/x/net v0.0.0-20220725212005-46097bf591d3
 	gomodules.xyz/jsonpatch/v3 v3.0.1
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	helm.sh/helm/v3 v3.8.0
 	k8s.io/api v0.23.9
-	k8s.io/apiextensions-apiserver v0.23.3
+	k8s.io/apiextensions-apiserver v0.23.5
 	k8s.io/apimachinery v0.23.9
 	k8s.io/cli-runtime v0.23.9
 	k8s.io/client-go v12.0.0+incompatible
@@ -37,7 +37,7 @@ require (
 	open-cluster-management.io/addon-framework v0.3.0
 	open-cluster-management.io/api v0.8.0
 	open-cluster-management.io/multicloud-operators-channel v0.8.0
-	sigs.k8s.io/controller-runtime v0.11.1
+	sigs.k8s.io/controller-runtime v0.11.2
 	sigs.k8s.io/kustomize/api v0.11.1
 	sigs.k8s.io/kustomize/kyaml v0.13.6
 )
@@ -193,9 +193,9 @@ require (
 	gopkg.in/src-d/go-billy.v4 v4.3.2 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	k8s.io/apiserver v0.23.3 // indirect
-	k8s.io/component-base v0.23.3 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+	k8s.io/apiserver v0.23.5 // indirect
+	k8s.io/component-base v0.23.5 // indirect
 	k8s.io/kube-aggregator v0.23.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf // indirect
 	k8s.io/kubectl v0.23.3 // indirect
