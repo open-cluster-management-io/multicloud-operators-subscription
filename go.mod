@@ -35,7 +35,7 @@ require (
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.70.1
 	open-cluster-management.io/addon-framework v0.3.0
-	open-cluster-management.io/api v0.8.0
+	open-cluster-management.io/api v0.6.1-0.20220208144021-3297cac74dc5
 	open-cluster-management.io/multicloud-operators-channel v0.8.0
 	sigs.k8s.io/controller-runtime v0.11.1
 	sigs.k8s.io/kustomize/api v0.11.4
