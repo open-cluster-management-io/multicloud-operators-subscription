@@ -13,7 +13,7 @@ require (
 	github.com/google/go-github/v42 v42.0.0
 	github.com/johannesboyne/gofakes3 v0.0.0-20210819161434-5c8dfcfe5310
 	github.com/onsi/ginkgo/v2 v2.1.4
-	github.com/onsi/gomega v1.19.0
+	github.com/onsi/gomega v1.20.0
 	github.com/openshift/api v0.0.0-20220525145417-ee5b62754c68
 	github.com/openshift/library-go v0.0.0-20220727134723-6802b30e83ba
 	github.com/operator-framework/operator-lib v0.10.0
@@ -37,7 +37,7 @@ require (
 	open-cluster-management.io/addon-framework v0.3.0
 	open-cluster-management.io/api v0.8.0
 	open-cluster-management.io/multicloud-operators-channel v0.8.0
-	sigs.k8s.io/controller-runtime v0.12.3
+	sigs.k8s.io/controller-runtime v0.11.1
 	sigs.k8s.io/kustomize/api v0.11.4
 	sigs.k8s.io/kustomize/kyaml v0.13.6
 )
