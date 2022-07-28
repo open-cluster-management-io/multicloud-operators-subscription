@@ -22,7 +22,7 @@ waitForRes() {
             if [ "${resKinds}" == "pods" ]; then
                 oc describe deployments -n ${resNamespace} ${resName}
             fi
-            exit 1
+            return
         fi
         if [ "$ignore" == "" ]; then
             operatorRes=`oc get ${resKinds} -n ${resNamespace} | grep ${resName}`
@@ -66,10 +66,11 @@ waitForRes "pods" "application-manager" "open-cluster-management-agent-addon" ""
 
 APP_ADDON_POD=$($KUBECTL get pods -n open-cluster-management-agent-addon |grep application-manager |awk -F' ' '{print $1}')
 
-sleep 60
 
 # output the application manager pod log
 $KUBECTL logs -n open-cluster-management-agent-addon $APP_ADDON_POD
+
+$KUBECTL describe pods -n open-cluster-management-agent-addon $APP_ADDON_POD
 
 # output lease result twice, make sure the lease is updated every 1 min
 checkLeaseOutput
