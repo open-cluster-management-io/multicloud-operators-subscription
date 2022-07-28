@@ -242,6 +242,8 @@ var _ = ginkgo.BeforeSuite(func() {
 
 			klog.Infof("app Addon ManifestWork created. status: %#v", appAddonManifestWork.Status)
 
+			klog.Infof("appAddonManifestWork status: %#v", appAddonManifestWork.Status)
+			klog.Infof("JMLOG ERROR: %v", err)
 			if err != nil {
 				return false, err
 			}
@@ -250,6 +252,7 @@ var _ = ginkgo.BeforeSuite(func() {
 		}
 
 		if !meta.IsStatusConditionTrue(addon.Status.Conditions, "Available") {
+			klog.Infof("JMLOG STATUS: %v", err)
 			return false, nil
 		}
 
