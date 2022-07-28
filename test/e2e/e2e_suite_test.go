@@ -182,6 +182,26 @@ var _ = ginkgo.BeforeSuite(func() {
 	})
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
+	// Ensure managed cluster Available
+	err = wait.Poll(5*time.Second, 300*time.Second, func() (bool, error) {
+		var err error
+		managedCluster, err = hubClusterClient.ClusterV1().ManagedClusters().Get(
+			context.TODO(), managedClusterName, metav1.GetOptions{})
+
+		klog.Infof("managedCluster: %#v", managedCluster)
+
+		if err != nil {
+			return false, err
+		}
+
+		if !meta.IsStatusConditionTrue(managedCluster.Status.Conditions, "ManagedClusterConditionAvailable") {
+			return false, nil
+		}
+
+		return true, nil
+	})
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
 	// Create application addon
 	addon := &addonapiv1alpha1.ManagedClusterAddOn{
 		ObjectMeta: metav1.ObjectMeta{
@@ -208,6 +228,7 @@ var _ = ginkgo.BeforeSuite(func() {
 		if !meta.IsStatusConditionTrue(addon.Status.Conditions, "Available") {
 			return false, nil
 		}
+
 		return true, nil
 	})
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
