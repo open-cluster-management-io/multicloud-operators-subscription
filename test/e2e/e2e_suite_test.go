@@ -26,6 +26,7 @@ import (
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	addonclient "open-cluster-management.io/api/client/addon/clientset/versioned"
 	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned"
+	workclient "open-cluster-management.io/api/client/work/clientset/versioned"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 )
 
@@ -39,6 +40,7 @@ var (
 	hubKubeClient      kubernetes.Interface
 	hubAddOnClient     addonclient.Interface
 	hubClusterClient   clusterclient.Interface
+	hubWorkClient      workclient.Interface
 	clusterCfg         *rest.Config
 )
 
@@ -70,6 +72,11 @@ var _ = ginkgo.BeforeSuite(func() {
 		}
 
 		hubAddOnClient, err = addonclient.NewForConfig(clusterCfg)
+		if err != nil {
+			return err
+		}
+
+		hubWorkClient, err = workclient.NewForConfig(clusterCfg)
 		if err != nil {
 			return err
 		}
@@ -208,6 +215,9 @@ var _ = ginkgo.BeforeSuite(func() {
 			Name:      "application-manager",
 			Namespace: managedClusterName,
 		},
+		Spec: addonapiv1alpha1.ManagedClusterAddOnSpec{
+			InstallNamespace: "open-cluster-management-agent-addon",
+		},
 	}
 
 	_, err = hubAddOnClient.AddonV1alpha1().ManagedClusterAddOns(managedClusterName).Create(
@@ -220,6 +230,15 @@ var _ = ginkgo.BeforeSuite(func() {
 			context.TODO(), "application-manager", metav1.GetOptions{})
 
 		klog.Infof("addon: %#v", addon)
+
+		if err != nil {
+			return false, err
+		}
+
+		appAddonManifestWork, err := hubWorkClient.WorkV1().ManifestWorks(managedClusterName).Get(
+			context.TODO(), "application-manager", metav1.GetOptions{})
+
+		klog.Infof("appAddonManifestWork status: %#v", appAddonManifestWork.Status)
 
 		if err != nil {
 			return false, err
