@@ -105,10 +105,11 @@ func RunManager() {
 
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
-		Port:               operatorMetricsPort,
-		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   leaderElectionID,
+		MetricsBindAddress:      fmt.Sprintf("%s:%d", metricsHost, metricsPort),
+		Port:                    operatorMetricsPort,
+		LeaderElection:          enableLeaderElection,
+		LeaderElectionID:        leaderElectionID,
+		LeaderElectionNamespace: "kube-system",
 	})
 
 	if err != nil {
