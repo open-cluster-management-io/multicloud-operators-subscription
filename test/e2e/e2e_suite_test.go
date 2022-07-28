@@ -235,10 +235,10 @@ var _ = ginkgo.BeforeSuite(func() {
 			return false, err
 		}
 
-		appAddonManifestWork, err := hubWorkClient.WorkV1().ManifestWorks(managedClusterName).Get(
-			context.TODO(), "addon-application-manager-deploy", metav1.GetOptions{})
+		appAddonManifestWorks, err := hubWorkClient.WorkV1().ManifestWorks(managedClusterName).List(
+			context.TODO(), metav1.ListOptions{})
 
-		klog.Infof("appAddonManifestWork status: %#v", appAddonManifestWork.Status)
+		klog.Infof("appAddonManifestWork: %#v", appAddonManifestWorks)
 
 		if err != nil {
 			return false, err
