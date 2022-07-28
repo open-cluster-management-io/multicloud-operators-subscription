@@ -195,8 +195,6 @@ var _ = ginkgo.BeforeSuite(func() {
 		managedCluster, err = hubClusterClient.ClusterV1().ManagedClusters().Get(
 			context.TODO(), managedClusterName, metav1.GetOptions{})
 
-		klog.Infof("managedCluster: %#v", managedCluster)
-
 		if err != nil {
 			return false, err
 		}
@@ -238,10 +236,15 @@ var _ = ginkgo.BeforeSuite(func() {
 		appAddonManifestWorks, err := hubWorkClient.WorkV1().ManifestWorks(managedClusterName).List(
 			context.TODO(), metav1.ListOptions{})
 
-		klog.Infof("appAddonManifestWork: %#v", appAddonManifestWorks)
+		if len(appAddonManifestWorks.Items) > 0 {
+			appAddonManifestWork, err := hubWorkClient.WorkV1().ManifestWorks(managedClusterName).Get(
+				context.TODO(), "addon-application-manager-deploy", metav1.GetOptions{})
 
-		if err != nil {
-			return false, err
+			klog.Infof("appAddonManifestWork status: %#v", appAddonManifestWork.Status)
+
+			if err != nil {
+				return false, err
+			}
 		}
 
 		if !meta.IsStatusConditionTrue(addon.Status.Conditions, "Available") {
