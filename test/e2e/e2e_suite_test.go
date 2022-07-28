@@ -240,11 +240,13 @@ var _ = ginkgo.BeforeSuite(func() {
 			appAddonManifestWork, err := hubWorkClient.WorkV1().ManifestWorks(managedClusterName).Get(
 				context.TODO(), "addon-application-manager-deploy", metav1.GetOptions{})
 
-			klog.Infof("appAddonManifestWork status: %#v", appAddonManifestWork.Status)
+			klog.Infof("app Addon ManifestWork created. status: %#v", appAddonManifestWork.Status)
 
 			if err != nil {
 				return false, err
 			}
+
+			return true, nil
 		}
 
 		if !meta.IsStatusConditionTrue(addon.Status.Conditions, "Available") {
