@@ -241,13 +241,14 @@ var _ = ginkgo.BeforeSuite(func() {
 				context.TODO(), "addon-application-manager-deploy", metav1.GetOptions{})
 
 			klog.Infof("appAddonManifestWork status: %#v", appAddonManifestWork.Status)
-
+			klog.Infof("JMLOG ERROR: %v", err)
 			if err != nil {
 				return false, err
 			}
 		}
 
 		if !meta.IsStatusConditionTrue(addon.Status.Conditions, "Available") {
+			klog.Infof("JMLOG STATUS: %v", err)
 			return false, nil
 		}
 
