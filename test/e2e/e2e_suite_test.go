@@ -15,6 +15,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/retry"
+	"k8s.io/klog/v2"
 
 	certificatesv1 "k8s.io/api/certificates/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -197,6 +198,8 @@ var _ = ginkgo.BeforeSuite(func() {
 		var err error
 		addon, err = hubAddOnClient.AddonV1alpha1().ManagedClusterAddOns(managedClusterName).Get(
 			context.TODO(), "application-manager", metav1.GetOptions{})
+
+		klog.Infof("addon: %#v", addon)
 
 		if err != nil {
 			return false, err
