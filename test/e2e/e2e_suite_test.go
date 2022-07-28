@@ -236,7 +236,7 @@ var _ = ginkgo.BeforeSuite(func() {
 		}
 
 		appAddonManifestWork, err := hubWorkClient.WorkV1().ManifestWorks(managedClusterName).Get(
-			context.TODO(), "application-manager", metav1.GetOptions{})
+			context.TODO(), "addon-application-manager-deploy", metav1.GetOptions{})
 
 		klog.Infof("appAddonManifestWork status: %#v", appAddonManifestWork.Status)
 
