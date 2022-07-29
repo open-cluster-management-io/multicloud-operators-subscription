@@ -11,7 +11,7 @@ waitForRes() {
     resNamespace=$3
     ignore=$4
     running="\([0-9]\+\)\/\1"
-    printf "\n#####\nWait for ${resNamespace}/${resName} to reach running state (4min).\n"
+    printf "\n#####\nWait for ${resNamespace}/${resName} to reach running state (3min).\n"
     while [ ${FOUND} -eq 1 ]; do
         # Wait up to 3min, should only take about 20-30s
         if [ $MINUTE -gt 180 ]; then
@@ -20,9 +20,15 @@ waitForRes() {
             oc get ${resKinds} -n ${resNamespace} ${resName}
             echo "You should see ${resNamespace}/${resName} ${resKinds}"
             if [ "${resKinds}" == "pods" ]; then
-                oc describe deployments -n ${resNamespace} ${resName}
+                APP_ADDON_POD=$($KUBECTL get pods -n ${resNamespace} |grep ${resName} |awk -F' ' '{print $1}')
+
+                echo "##### Output the pod log\n"
+                $KUBECTL logs -n ${resNamespace} $APP_ADDON_POD
+
+                echo "##### Describe the pod status\n"
+                $KUBECTL describe pods -n ${resNamespace} $APP_ADDON_POD
             fi
-            return
+            exit 1
         fi
         if [ "$ignore" == "" ]; then
             operatorRes=`oc get ${resKinds} -n ${resNamespace} | grep ${resName}`
@@ -41,36 +47,10 @@ waitForRes() {
     done
 }
 
-checkLeaseOutput() {
-    MINUTE=0
-    while [ true ]; do
-        # Wait up to 3min
-        if [ $MINUTE -gt 180 ]; then
-            echo "3 minutes reached."
-            exit 0
-        fi
-        $KUBECTL get lease -n open-cluster-management-agent-addon application-manager   -o yaml
-
-        sleep 60
-        (( MINUTE = MINUTE + 60 ))
-    done
-}
-
 KUBECTL=${KUBECTL:-kubectl}
-
 
 echo "############  access cluster1"
 $KUBECTL config use-context kind-cluster1
 
 waitForRes "pods" "application-manager" "open-cluster-management-agent-addon" ""
-
-APP_ADDON_POD=$($KUBECTL get pods -n open-cluster-management-agent-addon |grep application-manager |awk -F' ' '{print $1}')
-
-
-# output the application manager pod log
-$KUBECTL logs -n open-cluster-management-agent-addon $APP_ADDON_POD
-
-$KUBECTL describe pods -n open-cluster-management-agent-addon $APP_ADDON_POD
-
-# output lease result twice, make sure the lease is updated every 1 min
-checkLeaseOutput
+exit 0
