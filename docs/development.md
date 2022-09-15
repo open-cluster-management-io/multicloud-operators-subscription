@@ -52,13 +52,13 @@ git clone git@github.com:open-cluster-management/multicloud-operators-subscripti
 cd multicloud-operators-subscription
 ```
 
-1. Login to your hub cluster. Then build the local image
+2. Login to your hub cluster. Then build the local image
 
 ```shell
 make local
 ```
 
-1. Verify that the image was built successfully. The `ls -l build/_output/bin` command should return following values
+3. Verify that the image was built successfully. The `ls -l build/_output/bin` command should return following values
 
 ```shell
 ls -l build/_output/bin 
@@ -68,7 +68,7 @@ ls -l build/_output/bin
 -rwxr-xr-x  1 user  group  52879056 Jun 14 13:52 uninstall-crd
 ```
 
-1. Edit hub subscription pod to make it invalid, this is the prerequisite to start your local image
+4. Edit hub subscription pod to make it invalid, this is the prerequisite to start your local image
 
 Find the hub-sub pod
 
@@ -85,7 +85,7 @@ oc edit pod multicluster-operators-hub-subscription-${random-number} -n open-clu
 
 Search for the image name in the edit mode. Add -invalid to the end of the image name or anything to make it no longer valid. Check the pod status to make it crash (InvalidImageName)
 
-1. As subscription deployment has many scenarios: deploy to local, deploy to managed clusters, etc. We have four ways to run the image locally.
+5. As subscription deployment has many scenarios: deploy to local, deploy to managed clusters, etc. We have four ways to run the image locally.
 
 1. Start subscription manager on hub cluster
 
@@ -95,7 +95,7 @@ export KUBECONFIG=~/.kube/kubeconfig.hub
 build/_output/bin/multicluster-operators-subscription --alsologtostderr --sync-interval=60 --v=1 --debug
 ```
 
-1. Standalone subscription
+2. Standalone subscription
 
 ```shell
 export WATCH_NAMESPACE=
@@ -103,7 +103,7 @@ export KUBECONFIG=~/.kube/kubeconfig.hub
 build/_output/bin/multicluster-operators-subscription --alsologtostderr --standalone --sync-interval=60 --v=1
 ```
 
-1. Start subscription manager on local managed cluster (hub cluster is managed cluster)
+3. Start subscription manager on local managed cluster (hub cluster is managed cluster)
 
 ```shell
 export WATCH_NAMESPACE=
@@ -115,7 +115,7 @@ build/_output/bin/multicluster-operators-subscription --alsologtostderr --v=1 \
 ```
 
 
-1. start subscription manager on remote managed cluster
+4. start subscription manager on remote managed cluster
 
 ```shell
 export WATCH_NAMESPACE= 
