@@ -115,7 +115,7 @@ build/_output/bin/multicluster-operators-subscription --alsologtostderr --v=1 \
 ```
 
 
-- start subscription manager on remote managed cluster
+- Start subscription manager on remote managed cluster
 
 ```shell
 export WATCH_NAMESPACE= 
