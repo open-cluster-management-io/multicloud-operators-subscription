@@ -87,7 +87,7 @@ Search for the image name in the edit mode. Add -invalid to the end of the image
 
 5. As subscription deployment has many scenarios: deploy to local, deploy to managed clusters, etc. We have four ways to run the image locally.
 
-1. Start subscription manager on hub cluster
+- Start subscription manager on hub cluster
 
 ```shell
 export WATCH_NAMESPACE=
@@ -95,7 +95,7 @@ export KUBECONFIG=~/.kube/kubeconfig.hub
 build/_output/bin/multicluster-operators-subscription --alsologtostderr --sync-interval=60 --v=1 --debug
 ```
 
-2. Standalone subscription
+- Standalone subscription
 
 ```shell
 export WATCH_NAMESPACE=
@@ -103,7 +103,7 @@ export KUBECONFIG=~/.kube/kubeconfig.hub
 build/_output/bin/multicluster-operators-subscription --alsologtostderr --standalone --sync-interval=60 --v=1
 ```
 
-3. Start subscription manager on local managed cluster (hub cluster is managed cluster)
+- Start subscription manager on local managed cluster (hub cluster is managed cluster)
 
 ```shell
 export WATCH_NAMESPACE=
@@ -115,7 +115,7 @@ build/_output/bin/multicluster-operators-subscription --alsologtostderr --v=1 \
 ```
 
 
-4. start subscription manager on remote managed cluster
+- start subscription manager on remote managed cluster
 
 ```shell
 export WATCH_NAMESPACE= 
