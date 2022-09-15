@@ -148,3 +148,10 @@ type PlacementRuleList struct {
 func init() {
 	SchemeBuilder.Register(&PlacementRule{}, &PlacementRuleList{})
 }
+
+const (
+	// PlacementRuleDisableAnnotationkey is used to disable scheduling for a placementrule.
+	// It is an experimental flag to let placementrule controller ignore this placementrule,
+	// so other placementrule consumers can chime in.
+	PlacementRuleDisableAnnotationkey = "apps.open-cluster-management.io/experimental-controller-disable"
+)

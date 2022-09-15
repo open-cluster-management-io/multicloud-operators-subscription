@@ -95,3 +95,5 @@ cluster_config
 e2e/results
 
 test/unit
+
+vendor/

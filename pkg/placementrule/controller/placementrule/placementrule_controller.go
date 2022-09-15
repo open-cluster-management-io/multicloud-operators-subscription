@@ -30,8 +30,10 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -65,8 +67,29 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	placementRulePred := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			// no work if placementrule has apps.open-cluster-management.io/experimental-controller-disable: "true" annotation
+			if value, ok := e.Object.GetAnnotations()[appv1alpha1.PlacementRuleDisableAnnotationkey]; ok && value == "true" {
+				return false
+			}
+			return true
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			if value, ok := e.ObjectNew.GetAnnotations()[appv1alpha1.PlacementRuleDisableAnnotationkey]; ok && value == "true" {
+				return false
+			}
+			return e.ObjectNew.GetResourceVersion() != e.ObjectOld.GetResourceVersion()
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			if value, ok := e.Object.GetAnnotations()[appv1alpha1.PlacementRuleDisableAnnotationkey]; ok && value == "true" {
+				return false
+			}
+			return !e.DeleteStateUnknown
+		},
+	}
 	// Watch for changes to PlacementRule
-	err = c.Watch(&source.Kind{Type: &appv1alpha1.PlacementRule{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &appv1alpha1.PlacementRule{}}, &handler.EnqueueRequestForObject{}, placementRulePred)
 	if err != nil {
 		return err
 	}

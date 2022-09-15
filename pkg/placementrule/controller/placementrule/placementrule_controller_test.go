@@ -119,6 +119,44 @@ func TestReconcile(t *testing.T) {
 	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
 }
 
+func TestNoReconcile(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	c = mgr.GetClient()
+
+	recFn, requests := SetupTestReconcile(newReconciler(mgr))
+	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Minute)
+	mgrStopped := StartTestManager(ctx, mgr, g)
+
+	defer func() {
+		cancel()
+		mgrStopped.Wait()
+	}()
+
+	// Create the PlacementRule object and expect the Reconcile
+	instance := &appv1alpha1.PlacementRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      prulename,
+			Namespace: prulens,
+			Annotations: map[string]string{
+				"apps.open-cluster-management.io/experimental-controller-disable": "true",
+			},
+		},
+	}
+	err = c.Create(context.TODO(), instance)
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	defer c.Delete(context.TODO(), instance)
+
+	g.Eventually(requests, timeout).ShouldNot(gomega.Receive(gomega.Equal(expectedRequest)))
+}
+
 func TestClusterNames(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
