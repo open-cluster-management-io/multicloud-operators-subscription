@@ -453,6 +453,7 @@ func Test_generateGitChartPath(t *testing.T) {
 	type args struct {
 		annotations map[string]string
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -479,6 +480,7 @@ func Test_generateGitChartPath(t *testing.T) {
 			want: "",
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := generateGitChartPath(tt.args.annotations); got != tt.want {

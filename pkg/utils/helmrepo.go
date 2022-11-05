@@ -173,7 +173,7 @@ func createAltSource(channel *chnv1.Channel, chartVersions repo.ChartVersions, s
 }
 
 func generateGitChartPath(annotations map[string]string) string {
-	if annotations == nil || len(annotations) == 0 {
+	if len(annotations) == 0 {
 		return ""
 	}
 
