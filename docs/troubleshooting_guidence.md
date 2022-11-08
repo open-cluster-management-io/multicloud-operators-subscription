@@ -229,6 +229,30 @@ search for Deployment. Set spec.replicas to 0:
 % oc get pods -n open-cluster-management-agent-addon  |grep klusterlet-addon-appmgr
 klusterlet-addon-appmgr-794d76bcbf-tbsn5                     1/1    Running    0          14s
 ```
+### Set up memory limit for the managed subscription pod  (ACM >= 2.5)
+
+- On the hub cluster, pause mch reconcile
+```
+% oc annotate mch -n open-cluster-management multiclusterhub mch-pause=true --overwrite=true
+```
+
+- On the hub cluster,scale Down klusterlet-addon-controller-v2
+
+```
+% oc edit deployments -n open-cluster-management klusterlet-addon-controller-v2
+
+search for Deployment. Set spec.replicas to 0
+```
+
+- On the hub cluster, annotate new memory limit to the application-manager managedClusterAddon in the managed cluster NS
+```
+% oc annotate managedclusteraddon -n ${CLUSTER_NAME} application-manager addon.open-cluster-management.io/values='{"resources":{"requests":{"memory":"128Mi"},"limits":{"memory":"3Gi"}}}' --overwrite=true
+```
+
+- Go to the managed cluster, make sure the application manager pod is restarted wit the new memory limit.
+```
+% oc get pods -n open-cluster-management-agent-addon  |grep application-manager
+```
 
 ### Set up new image for the managed subscription pod  (ACM >= 2.5)
 
