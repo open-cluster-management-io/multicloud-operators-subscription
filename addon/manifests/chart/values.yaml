@@ -25,13 +25,15 @@ resources:
   limits:
     memory: 2Gi
 
-global: 
+global:
   imagePullPolicy: IfNotPresent
   imagePullSecret: null
-  imageOverrides: 
+  imageOverrides:
     multicluster_operators_subscription: quay.io/open-cluster-management/multicluster-operators-subscription:latest
   nodeSelector: {}
   proxyConfig:
     HTTP_PROXY: null
     HTTPS_PROXY: null
     NO_PROXY: null
+
+isOpenShift: false

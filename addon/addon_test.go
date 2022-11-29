@@ -56,7 +56,7 @@ func newAddon(name, cluster, installNamespace string, annotationValues string) *
 
 func newAgentAddon(t *testing.T) agent.AgentAddon {
 	registrationOption := newRegistrationOption(nil, AppMgrAddonName)
-	getValuesFunc := getValue
+	getValuesFunc := getValue(false)
 
 	agentAddon, err := addonfactory.NewAgentAddonFactory(AppMgrAddonName, ChartFS, ChartDir).
 		WithScheme(scheme).
