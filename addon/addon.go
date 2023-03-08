@@ -34,7 +34,8 @@ const (
 	AgentImageEnv = "OPERAND_IMAGE_MULTICLUSTER_OPERATORS_SUBSCRIPTION"
 )
 
-//nolint
+// nolint
+//
 //go:embed manifests
 //go:embed manifests/chart
 //go:embed manifests/chart/templates/_helpers.tpl
@@ -60,33 +61,37 @@ type GlobalValues struct {
 type Values struct {
 	OnHubCluster bool         `json:"onHubCluster,"`
 	GlobalValues GlobalValues `json:"global,"`
+	IsOpenShift  bool         `json:"isOpenShift,"`
 }
 
-func getValue(cluster *clusterv1.ManagedCluster,
-	addon *addonapiv1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
-	addonValues := Values{
-		OnHubCluster: false,
-		GlobalValues: GlobalValues{
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			ImagePullSecret: "open-cluster-management-image-pull-credentials",
-			ImageOverrides: map[string]string{
-				"multicluster_operators_subscription": AppMgrImage,
+func getValue(isOpenShift bool) addonfactory.GetValuesFunc {
+	return func(cluster *clusterv1.ManagedCluster,
+		addon *addonapiv1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
+		addonValues := Values{
+			OnHubCluster: false,
+			GlobalValues: GlobalValues{
+				ImagePullPolicy: corev1.PullIfNotPresent,
+				ImagePullSecret: "open-cluster-management-image-pull-credentials",
+				ImageOverrides: map[string]string{
+					"multicluster_operators_subscription": AppMgrImage,
+				},
+				NodeSelector: map[string]string{},
+				ProxyConfig: map[string]string{
+					"HTTP_PROXY":  "",
+					"HTTPS_PROXY": "",
+					"NO_PROXY":    "",
+				},
 			},
-			NodeSelector: map[string]string{},
-			ProxyConfig: map[string]string{
-				"HTTP_PROXY":  "",
-				"HTTPS_PROXY": "",
-				"NO_PROXY":    "",
-			},
-		},
-	}
+			IsOpenShift: isOpenShift,
+		}
 
-	labels := cluster.GetLabels()
-	if labels["local-cluster"] == "true" {
-		addonValues.OnHubCluster = true
-	}
+		labels := cluster.GetLabels()
+		if labels["local-cluster"] == "true" {
+			addonValues.OnHubCluster = true
+		}
 
-	return addonfactory.JsonStructToValues(addonValues)
+		return addonfactory.JsonStructToValues(addonValues)
+	}
 }
 
 func toAddonResources(config addonapiv1alpha1.AddOnDeploymentConfig) (addonfactory.Values, error) {
@@ -146,7 +151,7 @@ func newRegistrationOption(kubeClient *kubernetes.Clientset, addonName string) *
 	}
 }
 
-//nolint
+// nolint
 func applyManifestFromFile(file, clusterName, addonName string, kubeClient *kubernetes.Clientset) error {
 	groups := agent.DefaultGroups(clusterName, addonName)
 	config := struct {
@@ -181,6 +186,14 @@ func applyManifestFromFile(file, clusterName, addonName string, kubeClient *kube
 	return nil
 }
 
+func checkIfOpenShift(kubeClient *kubernetes.Clientset) bool {
+	if _, err := kubeClient.CoreV1().Namespaces().Get(context.TODO(), "openshift-monitoring", metav1.GetOptions{}); err != nil {
+		return false
+	}
+
+	return true
+}
+
 func NewAddonManager(kubeConfig *rest.Config, agentImage string, agentInstallAllStrategy bool) (addonmanager.AddonManager, error) {
 	AppMgrImage = agentImage
 
@@ -209,7 +222,7 @@ func NewAddonManager(kubeConfig *rest.Config, agentImage string, agentInstallAll
 			schema.GroupVersionResource{Group: "addon.open-cluster-management.io", Version: "v1alpha1", Resource: "addondeploymentconfigs"},
 		).
 		WithGetValuesFuncs(
-			getValue,
+			getValue(checkIfOpenShift(kubeClient)),
 			addonfactory.GetValuesFromAddonAnnotation,
 			// get the AddOnDeloymentConfig object and transform nodeSelector and toleration defined in spec.NodePlacement to Values object
 			addonfactory.GetAddOnDeloymentConfigValues(

@@ -1,0 +1,18 @@
+{{- if .Values.isOpenShift }}
+{{- if eq .Values.isOpenShift true }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mc-subscription-metrics
+  namespace: openshift-monitoring
+spec:
+  endpoints:
+  - port: metrics
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app: mc-subscription-metrics
+{{- end }}
+{{- end }}
