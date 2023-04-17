@@ -793,7 +793,11 @@ func (r *ReconcileSubscription) finalCommit(passedBranchRegistration bool, passe
 		res.RequeueAfter = defaulRequeueInterval
 		nIns.Status.LastUpdateTime = metav1.Now()
 
-		err := r.Client.Status().Patch(context.TODO(), nIns, client.MergeFrom(oIns), &client.PatchOptions{FieldManager: r.name})
+		err := r.Client.Status().Patch(context.TODO(), nIns, client.MergeFrom(oIns), &client.SubResourcePatchOptions{
+			PatchOptions: client.PatchOptions{
+				FieldManager: r.name,
+			},
+		})
 
 		if err != nil && !k8serrors.IsNotFound(err) {
 			// If it was a NotFound error, the object was probably already deleted so just ignore the error and return the existing result.
@@ -841,7 +845,11 @@ func (r *ReconcileSubscription) finalCommit(passedBranchRegistration bool, passe
 	if utils.IsHubRelatedStatusChanged(oIns.Status.DeepCopy(), nIns.Status.DeepCopy()) {
 		nIns.Status.LastUpdateTime = metav1.Now()
 
-		err := r.Client.Status().Patch(context.TODO(), nIns, client.MergeFrom(oIns), &client.PatchOptions{FieldManager: r.name})
+		err := r.Client.Status().Patch(context.TODO(), nIns, client.MergeFrom(oIns), &client.SubResourcePatchOptions{
+			PatchOptions: client.PatchOptions{
+				FieldManager: r.name,
+			},
+		})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			// If it was a NotFound error, the object was probably already deleted so just ignore the error and return the existing result.
 			if res.RequeueAfter == time.Duration(0) {
@@ -882,7 +890,11 @@ func (r *ReconcileSubscription) finalCommit(passedBranchRegistration bool, passe
 	nIns.Status = r.hooks.AppendStatusToSubscription(nIns)
 	nIns.Status.LastUpdateTime = metav1.Now()
 
-	err = r.Client.Status().Patch(context.TODO(), nIns, client.MergeFrom(oIns), &client.PatchOptions{FieldManager: r.name})
+	err = r.Client.Status().Patch(context.TODO(), nIns, client.MergeFrom(oIns), &client.SubResourcePatchOptions{
+		PatchOptions: client.PatchOptions{
+			FieldManager: r.name,
+		},
+	})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		// If it was a NotFound error, the object was probably already deleted so just ignore the error and return the existing result.
 		if res.RequeueAfter == time.Duration(0) {
