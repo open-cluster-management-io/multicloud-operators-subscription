@@ -37,6 +37,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
+	clientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	apimachineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	ocinfrav1 "github.com/openshift/api/config/v1"
 	addonutils "open-cluster-management.io/addon-framework/pkg/utils"
 	spokeClusterV1 "open-cluster-management.io/api/cluster/v1"
@@ -264,6 +267,65 @@ func RunManager() {
 	if !Options.Standalone && Options.ClusterName == "" {
 		klog.Info("Detecting ACM Placement Decision API on the hub...")
 		utils.DetectPlacementDecision(sig, mgr.GetAPIReader(), mgr.GetClient())
+	}
+
+	if Options.ClusterName == "" {
+		crdxhub, err := clientset.NewForConfig(hubconfig)
+		if err != nil {
+			klog.Error("unable to build clientset for Subscription CRD check on hub cluster")
+			os.Exit(1)
+		}
+
+		klog.Info("Detecting Subscription API on the hub...")
+
+		for {
+			var err error
+
+			crds := [3]string{"subscriptions.apps.open-cluster-management.io",
+				"subscriptionstatuses.apps.open-cluster-management.io", "subscriptionreports.apps.open-cluster-management.io"}
+			for _, crd := range crds {
+				_, err = crdxhub.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(), crd, apimachineryv1.GetOptions{})
+				if err != nil {
+					break
+				}
+			}
+
+			if err != nil {
+				klog.Error("Subscription API is NOT ready: ", err)
+				time.Sleep(10 * time.Second)
+			} else {
+				klog.Info("Subscription API is ready.")
+				break
+			}
+		}
+	} else {
+		crdxmanaged, err := clientset.NewForConfig(mgr.GetConfig())
+		if err != nil {
+			klog.Error("unable to build clientset for Subscription CRD check on managed cluster")
+			os.Exit(1)
+		}
+
+		klog.Info("Detecting Subscription API...")
+
+		for {
+			var err error
+
+			crds := [2]string{"subscriptions.apps.open-cluster-management.io", "subscriptionstatuses.apps.open-cluster-management.io"}
+			for _, crd := range crds {
+				_, err = crdxmanaged.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(), crd, apimachineryv1.GetOptions{})
+				if err != nil {
+					break
+				}
+			}
+
+			if err != nil {
+				klog.Error("Subscription API is NOT ready: ", err)
+				time.Sleep(10 * time.Second)
+			} else {
+				klog.Info("Subscription API is ready.")
+				break
+			}
+		}
 	}
 
 	klog.Info("Starting the Cmd.")

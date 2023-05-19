@@ -1703,6 +1703,7 @@ func TestIsReadyPlacementDecision(t *testing.T) {
 	ret := IsReadyPlacementDecision(mgr.GetAPIReader())
 	g.Expect(ret).To(BeFalse())
 }
+
 func TestFetchChannelReferences(t *testing.T) {
 	g := NewGomegaWithT(t)
 
