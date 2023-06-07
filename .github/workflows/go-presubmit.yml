@@ -85,7 +85,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_UPLOAD_TOKEN }}
-          files: /home/runner/work/multicloud-operators-subscription/multicloud-operators-subscription/go/src/github.com/open-cluster-management/multicloud-operators-subscriptioncoverage.out,/home/runner/work/multicloud-operators-subscription/multicloud-operators-subscription/go/src/github.com/open-cluster-management/multicloud-operators-subscription/addon_coverage.out
+          files: /home/runner/work/multicloud-operators-subscription/multicloud-operators-subscription/go/src/github.com/open-cluster-management/multicloud-operators-subscription/coverage.out,/home/runner/work/multicloud-operators-subscription/multicloud-operators-subscription/go/src/github.com/open-cluster-management/multicloud-operators-subscription/addon_coverage.out
           flags: unit
           name: unit
           verbose: true
