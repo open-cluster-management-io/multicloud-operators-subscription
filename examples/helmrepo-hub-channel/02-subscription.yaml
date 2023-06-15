@@ -7,8 +7,9 @@ spec:
   name: ingress-nginx
   placement:
     placementRef:
-      kind: PlacementRule
-      name: nginx-pr
+      kind: Placement
+      name: nginx-placement
+      namespace: default
   packageOverrides:
   - packageName: ingress-nginx
     packageAlias: ingress-nginx-simple
