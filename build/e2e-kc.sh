@@ -16,6 +16,8 @@ else
     kubectl -n open-cluster-management-agent-addon get deploy
     exit 1
 fi
+sleep 30
+kubectl -n open-cluster-management-agent-addon logs deploy/application-manager
 
 ### 01-placement
 echo "STARTING test case 01-placement"
