@@ -16,8 +16,6 @@ else
     kubectl -n open-cluster-management-agent-addon get deploy
     exit 1
 fi
-sleep 30
-kubectl -n open-cluster-management-agent-addon logs deploy/application-manager
 
 ### 01-placement
 echo "STARTING test case 01-placement"
@@ -35,18 +33,10 @@ else
 fi
 
 kubectl config use-context kind-cluster1
-kubectl -n open-cluster-management-agent-addon logs deploy/application-manager
-kubectl get subscriptions.apps.open-cluster-management.io ingress -o yaml
 if kubectl get subscriptions.apps.open-cluster-management.io ingress | grep Subscribed; then
     echo "01-placement: cluster1 subscriptions.apps.open-cluster-management.io status is Subscribed"
 else
     echo "01-placement FAILED: cluster1 subscriptions.apps.open-cluster-management.io status is not Subscribed"
-
-    kubectl config use-context kind-hub
-    kubectl -n open-cluster-management logs deploy/multicluster-operators-channel
-    kubectl get roles -n default default -o yaml
-    kubectl get rolebindings -n default default -o yaml
-
     exit 1
 fi
 
