@@ -41,6 +41,12 @@ if kubectl get subscriptions.apps.open-cluster-management.io ingress | grep Subs
     echo "01-placement: cluster1 subscriptions.apps.open-cluster-management.io status is Subscribed"
 else
     echo "01-placement FAILED: cluster1 subscriptions.apps.open-cluster-management.io status is not Subscribed"
+
+    kubectl config use-context kind-hub
+    kubectl -n open-cluster-management logs deploy/multicluster-operators-channel
+    kubectl get roles -n default default -o yaml
+    kubectl get rolebindings -n default default -o yaml
+
     exit 1
 fi
 
