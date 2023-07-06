@@ -35,6 +35,8 @@ else
 fi
 
 kubectl config use-context kind-cluster1
+kubectl -n open-cluster-management-agent-addon logs deploy/application-manager
+kubectl get subscriptions.apps.open-cluster-management.io ingress -o yaml
 if kubectl get subscriptions.apps.open-cluster-management.io ingress | grep Subscribed; then
     echo "01-placement: cluster1 subscriptions.apps.open-cluster-management.io status is Subscribed"
 else

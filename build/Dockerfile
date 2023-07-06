@@ -29,10 +29,10 @@ ENV OPERATOR=/usr/local/bin/multicluster-operators-subscription \
     KUSTOMIZE_PLUGIN_HOME=/etc/kustomize/plugin
 
 # install operator binary
-COPY build/_output/bin/multicluster-operators-subscription ${OPERATOR}
-COPY build/_output/bin/multicluster-operators-placementrule /usr/local/bin
-COPY build/_output/bin/uninstall-crd /usr/local/bin
-COPY build/_output/bin/appsubsummary /usr/local/bin
+COPY --from=plugin-builder go/src/github.com/open-cluster-management/multicloud-operators-subscription/build/_output/bin/multicluster-operators-subscription ${OPERATOR}
+COPY --from=plugin-builder go/src/github.com/open-cluster-management/multicloud-operators-subscription/build/_output/bin/multicluster-operators-placementrule /usr/local/bin
+COPY --from=plugin-builder go/src/github.com/open-cluster-management/multicloud-operators-subscription/build/_output/bin/uninstall-crd /usr/local/bin
+COPY --from=plugin-builder go/src/github.com/open-cluster-management/multicloud-operators-subscription/build/_output/bin/appsubsummary /usr/local/bin
 
 # install the policy generator Kustomize plugin
 RUN mkdir -p $KUSTOMIZE_PLUGIN_HOME/policy.open-cluster-management.io/v1/policygenerator
