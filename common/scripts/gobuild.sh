@@ -46,5 +46,5 @@ if [[ "${STATIC}" !=  "1" ]];then
 fi
 
 time GOOS=${BUILD_GOOS} GOARCH=${BUILD_GOARCH} ${GOBINARY} build \
-        -a -tags static \
+        -a \
         -o "${OUT}" "${@}"
