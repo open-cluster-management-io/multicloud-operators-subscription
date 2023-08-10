@@ -89,7 +89,7 @@ var _ = ginkgo.BeforeSuite(func() {
 
 	var csrs *certificatesv1.CertificateSigningRequestList
 	// Waiting for the CSR for ManagedCluster to exist
-	err = wait.Poll(1*time.Second, 120*time.Second, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(context.TODO(), 1*time.Second, 120*time.Second, true, func(ctx context.Context) (bool, error) {
 		var err error
 		csrs, err = hubKubeClient.CertificatesV1().CertificateSigningRequests().List(
 			context.TODO(), metav1.ListOptions{LabelSelector: fmt.Sprintf(
@@ -137,7 +137,7 @@ var _ = ginkgo.BeforeSuite(func() {
 
 	var managedCluster *clusterv1.ManagedCluster
 	// Waiting for ManagedCluster to exist
-	err = wait.Poll(1*time.Second, 120*time.Second, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(context.TODO(), 1*time.Second, 120*time.Second, true, func(ctx context.Context) (bool, error) {
 		var err error
 		managedCluster, err = hubClusterClient.ClusterV1().ManagedClusters().Get(
 			context.TODO(), managedClusterName, metav1.GetOptions{})
@@ -171,7 +171,7 @@ var _ = ginkgo.BeforeSuite(func() {
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 	// Ensure cluster namespace exists
-	err = wait.Poll(1*time.Second, 60*time.Second, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(context.TODO(), 1*time.Second, 60*time.Second, true, func(ctx context.Context) (bool, error) {
 		var err error
 		_, err = hubKubeClient.CoreV1().Namespaces().Get(
 			context.TODO(), managedClusterName, metav1.GetOptions{},
@@ -190,7 +190,7 @@ var _ = ginkgo.BeforeSuite(func() {
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 	// Ensure managed cluster Available
-	err = wait.Poll(5*time.Second, 300*time.Second, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(context.TODO(), 5*time.Second, 300*time.Second, true, func(ctx context.Context) (bool, error) {
 		var err error
 		managedCluster, err = hubClusterClient.ClusterV1().ManagedClusters().Get(
 			context.TODO(), managedClusterName, metav1.GetOptions{})
@@ -222,7 +222,7 @@ var _ = ginkgo.BeforeSuite(func() {
 		context.TODO(), addon, metav1.CreateOptions{})
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-	err = wait.Poll(5*time.Second, 600*time.Second, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(context.TODO(), 5*time.Second, 600*time.Second, true, func(ctx context.Context) (bool, error) {
 		var err error
 		addon, err = hubAddOnClient.AddonV1alpha1().ManagedClusterAddOns(managedClusterName).Get(
 			context.TODO(), "application-manager", metav1.GetOptions{})
@@ -235,6 +235,10 @@ var _ = ginkgo.BeforeSuite(func() {
 
 		appAddonManifestWorks, err := hubWorkClient.WorkV1().ManifestWorks(managedClusterName).List(
 			context.TODO(), metav1.ListOptions{})
+
+		if err != nil {
+			return false, err
+		}
 
 		if len(appAddonManifestWorks.Items) > 0 {
 			appAddonManifestWork, err := hubWorkClient.WorkV1().ManifestWorks(managedClusterName).Get(
