@@ -1086,7 +1086,13 @@ func ParseYAML(fileContent []byte) []string {
 	}
 
 	// Then now split the YAML content using --- delimeter
-	items := strings.Split(string(newFileContent), "\n---\n")
+	items := strings.Split(string(newFileContent), "---")
+
+	klog.Infof("Total resource count:%v", len(items))
+
+	for _, item := range items {
+		klog.V(1).Infof("parsed resource: %v", item)
+	}
 
 	return items
 }
