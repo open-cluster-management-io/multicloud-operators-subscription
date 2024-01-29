@@ -285,7 +285,6 @@ func CloneGitRepo(cloneOptions *GitCloneOption) (commitID string, err error) {
 		if secondaryOptions == nil {
 			// if trying the secondary connection option but nothing there, return error
 			// at this point, we have no Git connection options
-
 			klog.Error("failed to build secondary git connection options")
 			return "", errors.New("failed to build secondary git connection options")
 		}
