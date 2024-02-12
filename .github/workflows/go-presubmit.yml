@@ -102,8 +102,7 @@ jobs:
       - name: Run Gosec Security Scanner
         uses: securego/gosec@master
         with:
-          # gosec doesn't support in-line comment like `//nolint` to ignore the G602 warning.
-          args: -exclude-generated -exclude=G602 ./...
+          args: -exclude-generated ./...
   
   e2e:
     name: e2e
