@@ -60,7 +60,7 @@ type BitBucketRepository struct {
 }
 
 func (listener *WebhookListener) handleBitbucketWebhook(r *http.Request) error {
-	event := r.Header.Get(BitbucketEventHeader) // has to have value. webhook_listner ensures.
+	event := r.Header.Get(BitbucketEventHeader) // has to have value. webhook_listener ensures.
 
 	klog.Info("Handling BitBucket webhook event: " + event)
 

@@ -204,7 +204,7 @@ func CreateWebhookListener(config,
 		}
 
 		// Create the webhook listener service only when the subscription controller runs in hub mode.
-		err = createWebhookListnerService(l.LocalClient, namespace)
+		err = createWebhookListenerService(l.LocalClient, namespace)
 
 		if err != nil {
 			klog.Error("Failed to create a service for Git webhook listener. error: ", err)
@@ -215,7 +215,7 @@ func CreateWebhookListener(config,
 	return l, err
 }
 
-func createWebhookListnerService(client client.Client, namespace string) error {
+func createWebhookListenerService(client client.Client, namespace string) error {
 	var theServiceKey = types.NamespacedName{
 		Name:      serviceName,
 		Namespace: namespace,
@@ -225,7 +225,7 @@ func createWebhookListnerService(client client.Client, namespace string) error {
 
 	if err := client.Get(context.TODO(), theServiceKey, service); err != nil {
 		if errors.IsNotFound(err) {
-			service, err := webhookListnerService(client, namespace)
+			service, err := webhookListenerService(client, namespace)
 
 			if err != nil {
 				return err
@@ -235,7 +235,7 @@ func createWebhookListnerService(client client.Client, namespace string) error {
 				return err
 			}
 
-			klog.Info("Git webhook listner service created.")
+			klog.Info("Git webhook listener service created.")
 		} else {
 			return err
 		}
@@ -244,7 +244,7 @@ func createWebhookListnerService(client client.Client, namespace string) error {
 	return nil
 }
 
-func webhookListnerService(client client.Client, namespace string) (*corev1.Service, error) {
+func webhookListenerService(client client.Client, namespace string) (*corev1.Service, error) {
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      serviceName,

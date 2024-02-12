@@ -51,7 +51,7 @@ type GitLabRepository struct {
 }
 
 func (listener *WebhookListener) handleGitlabWebhook(r *http.Request) error {
-	event := r.Header.Get(GitlabEventHeader) // has to have value. webhook_listner ensures.
+	event := r.Header.Get(GitlabEventHeader) // has to have value. webhook_listener ensures.
 
 	klog.Info("Handling GitLab webhook event: " + event)
 
