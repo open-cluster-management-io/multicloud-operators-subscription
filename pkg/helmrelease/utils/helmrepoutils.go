@@ -23,7 +23,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -348,7 +347,7 @@ func getKnownHostFromURL(sshURL string, filepath string) error {
 
 	klog.Info("SSH host key: " + string(stdout))
 
-	if err := ioutil.WriteFile(filepath, stdout, 0600); err != nil {
+	if err := os.WriteFile(filepath, stdout, 0600); err != nil {
 		klog.Error("failed to write known_hosts file: ", err)
 		return err
 	}

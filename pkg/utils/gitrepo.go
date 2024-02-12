@@ -23,7 +23,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -426,7 +425,7 @@ func getKnownHostFromURL(sshURL string, filepath string) error {
 
 	klog.Info("SSH host key: " + string(stdout))
 
-	if err := ioutil.WriteFile(filepath, stdout, 0600); err != nil {
+	if err := os.WriteFile(filepath, stdout, 0600); err != nil {
 		klog.Error("failed to write known_hosts file: ", err)
 		return err
 	}
@@ -812,7 +811,7 @@ func sortKubeResource(crdsAndNamespaceFiles, rbacFiles, otherFiles []string, pat
 	if strings.EqualFold(filepath.Ext(path), ".yml") || strings.EqualFold(filepath.Ext(path), ".yaml") {
 		klog.V(4).Info("Reading file: ", path)
 
-		file, err := ioutil.ReadFile(path) // #nosec G304 path is not user input
+		file, err := os.ReadFile(path) // #nosec G304 path is not user input
 
 		if err != nil {
 			klog.Error(err, "Failed to read YAML file "+path)

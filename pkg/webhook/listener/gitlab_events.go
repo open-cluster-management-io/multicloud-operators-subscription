@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -55,7 +55,7 @@ func (listener *WebhookListener) handleGitlabWebhook(r *http.Request) error {
 
 	klog.Info("Handling GitLab webhook event: " + event)
 
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil || len(body) == 0 {
 		klog.Error("Failed to parse the payload: ", err)
 		return errors.New("failed to parse the payload")

@@ -19,7 +19,7 @@ import (
 	"crypto/sha1" // #nosec G505 Used only to generate random value to be used to generate hash string
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"strconv"
@@ -524,7 +524,7 @@ func getHelmRepoIndex(client rest.HTTPClient, sub *appv1.Subscription,
 
 	klog.V(5).Info("Get succeeded: ", cleanRepoURL)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		klog.Error(err, "Unable to read body: ", cleanRepoURL)
 
