@@ -448,10 +448,9 @@ func getHelmRepoClient(chnCfg *corev1.ConfigMap, insecureSkipVerify bool) (*http
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
-		/* #nosec G402 */
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: insecureSkipVerify, // #nosec G402 InsecureSkipVerify optionally
-			MinVersion:         appv1.TLSMinVersionInt,
+			InsecureSkipVerify: insecureSkipVerify,     // #nosec G402 InsecureSkipVerify optionally
+			MinVersion:         appv1.TLSMinVersionInt, // #nosec G402 -- TLS 1.2 is required for FIPS
 		},
 	}
 

@@ -489,7 +489,7 @@ func getHTTPOptions(options *git.CloneOptions, user, password, caCerts string, i
 
 	installProtocol := false
 
-	// #nosec G402
+	// #nosec G402 -- TLS 1.2 is required for FIPS
 	clientConfig := &tls.Config{MinVersion: appv1.TLSMinVersionInt}
 
 	// skip TLS certificate verification for Git servers with custom or self-signed certs
@@ -553,7 +553,6 @@ func getHTTPOptions(options *git.CloneOptions, user, password, caCerts string, i
 		klog.Info("NO_PROXY = " + os.Getenv("NO_PROXY"))
 
 		transportConfig := &http.Transport{
-			/* #nosec G402 */
 			TLSClientConfig: clientConfig,
 		}
 
@@ -574,7 +573,6 @@ func getHTTPOptions(options *git.CloneOptions, user, password, caCerts string, i
 		}
 
 		customClient := &http.Client{
-			/* #nosec G402 */
 			Transport: transportConfig,
 
 			// 15 second timeout

@@ -379,13 +379,12 @@ func serveHealthProbes(healthProbeBindAddress string, configCheck healthz.Checke
 		"configz-ping": configCheck,
 	}}))
 
-	/* #nosec G402 */
 	server := http.Server{
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 		Addr:              healthProbeBindAddress,
 		TLSConfig: &tls.Config{
-			MinVersion: appsubv1.TLSMinVersionInt,
+			MinVersion: appsubv1.TLSMinVersionInt, // #nosec G402 -- TLS 1.2 is required for FIPS
 		},
 	}
 

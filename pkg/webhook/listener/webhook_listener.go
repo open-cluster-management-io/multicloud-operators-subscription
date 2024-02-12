@@ -114,12 +114,13 @@ func (listener *WebhookListener) Start(ctx context.Context) error {
 	if listener.TLSKeyFile != "" && listener.TLSCrtFile != "" {
 		klog.Info("Starting the WebHook listener on port 8443 with TLS key and cert files: " + listener.TLSKeyFile + " " + listener.TLSCrtFile)
 
-		// #nosec G402
 		s := &http.Server{
 			Addr:              ":8443",
 			Handler:           mux,
 			ReadHeaderTimeout: 32 * time.Second,
-			TLSConfig:         &tls.Config{MinVersion: appv1alpha1.TLSMinVersionInt},
+			TLSConfig: &tls.Config{
+				MinVersion: appv1alpha1.TLSMinVersionInt, // #nosec G402 -- TLS 1.2 is required for FIPS
+			},
 		}
 
 		klog.Fatal(s.ListenAndServeTLS(listener.TLSCrtFile, listener.TLSKeyFile))
