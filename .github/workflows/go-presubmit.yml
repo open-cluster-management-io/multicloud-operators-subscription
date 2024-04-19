@@ -8,7 +8,7 @@ on:
 
 env:
   # Common versions
-  GO_VERSION: '1.20'
+  GO_VERSION: '1.21'
   GO_REQUIRED_MIN_VERSION: ''
   GOPATH: '/home/runner/work/multicloud-operators-subscription/multicloud-operators-subscription/go'
 defaults:
@@ -82,9 +82,9 @@ jobs:
       - name: test
         run: make test
       - name: report-coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.CODECOV_UPLOAD_TOKEN }}
+          token: 499fda0d-574a-439f-bc75-b591085753c8
           files: /home/runner/work/multicloud-operators-subscription/multicloud-operators-subscription/go/src/github.com/open-cluster-management/multicloud-operators-subscription/coverage.out,/home/runner/work/multicloud-operators-subscription/multicloud-operators-subscription/go/src/github.com/open-cluster-management/multicloud-operators-subscription/addon_coverage.out
           flags: unit
           name: unit
