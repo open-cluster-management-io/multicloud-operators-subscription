@@ -84,7 +84,7 @@ jobs:
       - name: report-coverage
         uses: codecov/codecov-action@v4
         with:
-          token: 499fda0d-574a-439f-bc75-b591085753c8
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: /home/runner/work/multicloud-operators-subscription/multicloud-operators-subscription/go/src/github.com/open-cluster-management/multicloud-operators-subscription/coverage.out,/home/runner/work/multicloud-operators-subscription/multicloud-operators-subscription/go/src/github.com/open-cluster-management/multicloud-operators-subscription/addon_coverage.out
           flags: unit
           name: unit
