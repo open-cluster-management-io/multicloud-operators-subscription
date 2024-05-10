@@ -66,7 +66,7 @@ func GetComponentNamespace() string {
 	nsBytes, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 
 	if err != nil || len(nsBytes) == 0 {
-		klog.Errorf("failed to get app addon pod namespace use. error: %v", err)
+		klog.Errorf("failed to get app addon pod namespace. error: %v", err)
 
 		addonNameSpace = "open-cluster-management-agent-addon"
 	} else {

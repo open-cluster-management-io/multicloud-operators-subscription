@@ -301,7 +301,7 @@ func (r *ReconcileAgentToken) getServiceAccountTokenSecret() string {
 
 			err = r.Client.Get(context.TODO(), types.NamespacedName{Name: secret.Name, Namespace: appAddonNS}, dockerSecret)
 			if err != nil {
-				klog.Error(err.Error())
+				klog.Errorf("secret not found: %v/%v, err: %v", appAddonNS, secret.Name, err.Error())
 				return ""
 			}
 
