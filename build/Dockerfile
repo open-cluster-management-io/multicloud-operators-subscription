@@ -1,5 +1,5 @@
 FROM registry.ci.openshift.org/stolostron/builder:go1.21-linux AS plugin-builder
-ENV POLICY_GENERATOR_TAG=v1.13.0
+ENV POLICY_GENERATOR_TAG=v1.15.0
 
 WORKDIR /go/src/github.com/open-cluster-management/multicloud-operators-subscription
 COPY . .
@@ -15,13 +15,13 @@ RUN cd "/policy-generator/policy-generator-plugin" && \
         make build-binary && \
         mv "PolicyGenerator" "/policy-generator/"
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 RUN  microdnf update -y \ 
         && rpm -e --nodeps tzdata \
-        && microdnf install tzdata \
-        && microdnf install git-core \
-        && microdnf install openssh-clients \
+        && microdnf install -y tzdata \
+        && microdnf install -y git-core \
+        && microdnf install -y openssh-clients \
         && microdnf clean all
 
 ENV OPERATOR=/usr/local/bin/multicluster-operators-subscription \
