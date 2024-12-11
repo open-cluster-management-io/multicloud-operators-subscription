@@ -1,4 +1,4 @@
-FROM registry.ci.openshift.org/stolostron/builder:go1.21-linux AS plugin-builder
+FROM registry.ci.openshift.org/stolostron/builder:go1.22-linux AS plugin-builder
 ENV POLICY_GENERATOR_TAG=v1.16.0
 
 WORKDIR /go/src/github.com/open-cluster-management/multicloud-operators-subscription
