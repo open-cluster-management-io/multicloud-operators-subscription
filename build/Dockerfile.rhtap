@@ -1,5 +1,5 @@
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.23 AS plugin-builder
-ENV POLICY_GENERATOR_TAG=v1.16.0
+ENV POLICY_GENERATOR_TAG=v1.17.0
 
 WORKDIR /go/src/github.com/open-cluster-management/multicloud-operators-subscription
 COPY . .
