@@ -1,3 +1,14 @@
+## IMPORTANT
+
+There is significantly more interest and momentum around solving GitOps integration via
+[Argo CD](https://argo-cd.readthedocs.io/).
+As a result, this repo will be archived prior to the release of
+[OCM v1.0.0](https://github.com/open-cluster-management-io/ocm/issues/832). 
+
+For OCM + Argo CD integration solutions, please refer to the 
+[OCM solutions](https://github.com/open-cluster-management-io/ocm/tree/main/solutions)
+folder.
+
 # multicloud-operators-subscription
 
 [![License](https://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
